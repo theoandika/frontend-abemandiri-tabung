@@ -6,7 +6,11 @@ const ApiEndpoint = {
     // account
     ACCOUNT: 'account/detail',
 
+    // member
+    MEMBER_ALL: "members",
+
     // site
+    SITE_ALL: 'sites',
     SITE_INDEX: 'sites/index',
 
     // tube

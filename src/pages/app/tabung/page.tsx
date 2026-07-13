@@ -92,7 +92,7 @@ export default function Page() {
   });
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
 
   const getRowSpacing = useCallback((params: GridRowSpacingParams) => {
@@ -345,7 +345,7 @@ export default function Page() {
           pagination
           paginationModel={paginationModel}
           onPaginationModelChange={(newModel) => setPaginationModel(newModel)}
-          pageSizeOptions={[1,5,25]}
+          pageSizeOptions={[5,10,25,50,100]}
           slotProps={{
             panel: {
               className: "mt-1!",
