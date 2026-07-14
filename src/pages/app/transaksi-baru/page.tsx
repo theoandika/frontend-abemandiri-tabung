@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
 import {
   Box,
   Button,
@@ -13,12 +12,16 @@ import {
   Typography,
   Grid,
   FormControlLabel,
-  Checkbox,
   Autocomplete,
   TextField,
   RadioGroup,
   Radio,
-  Divider
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  useMediaQuery
 } from "@mui/material";
 import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint"
@@ -27,17 +30,16 @@ import { useZxing } from 'react-zxing';
 
 import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
-import { CheckboxSmallChecked, CheckboxSmallEmpty } from "@/icons/form/mui-checkbox";
 import NiUploadCloud from "@/icons/nexture/ni-upload-cloud";
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import NiCross from "@/icons/nexture/ni-cross";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import NiCalendar from "@/icons/nexture/ni-calendar";
 import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
-import { RadiobuttonSmallChecked, RadiobuttonSmallEmpty } from "@/icons/form/mui-radiobutton";
+import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import NiCamera from "@/icons/nexture/ni-camera";
 
 const VisuallyHiddenInput = styled('input')({
@@ -56,28 +58,50 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false)
   const [site, setSite] = useState("")
   const [siteOptions, setSiteOptions] = useState([])
-  const [member, setMember] = useState()
-  const [memberOptions, setMemberOptions] = useState<{ label: string; value: string | number }[]>([])
-  const [date, setDate] = useState("")
+  const [member, setMember] = useState<{ label: string; value: string } | null>(null)
+  const [memberOptions, setMemberOptions] = useState<{ label: string; value: string }[]>([])
+  const [date, setDate] = useState<Dayjs>(dayjs())
   const [transactionType, setTransactionType] = useState("")
   const [tubeStatus, setTubeStatus] = useState("")
   const [note, setNote] = useState("")
   const [nominal, setNominal] = useState("")
   const [document, setDocument] = useState(null)
-  const [barcodes, setBarcodes] = useState([])
+  const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>([])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [scan, setScan] = useState(null);
-  const [ deviceId, setDeviceId ] = useState<string>("");
+  const [deviceId, setDeviceId] = useState<string>("");
+  const [scanPaused, setScanPaused] = useState(true)
+  const [scanResult, setScanResult] = useState<string>("")
+  const [manualBarcode, setManualBarcode] = useState<string>("")
+
+  const theme = useTheme();
+  const fullScreenResponsive = useMediaQuery(theme.breakpoints.down("md"));
+
+  const checkBarcodeExists = (barcode: string) => {
+    return barcodes.findIndex(item => item.value === barcode) === -1 ? false : true
+  }
 
   const { ref } = useZxing({
-    deviceId: deviceId
+    deviceId: deviceId,
+    onDecodeResult(result) {
+      if (!checkBarcodeExists(result.rawValue)) {
+        setBarcodes(prev => [...prev, { id: crypto.randomUUID().toString(), value: result.rawValue }])
+        setScanResult(result.rawValue)
+      } else {
+        setScanResult("Barcode sudah ada")
+      }
+    },
+    paused: scanPaused,
+    timeBetweenDecodingAttempts: 3000
   });
 
-  const getContentOptions = () => {
+  const getSiteOptions = () => {
     setIsLoading(true)
     Axios.get(ApiEndpoint.SITE_ALL)
     .then((res) => {
       setSiteOptions(res?.data?.data)
+      if (res?.data?.data?.length === 1) {
+        setSite(res?.data?.data[0]?.id)
+      }
     })
     .finally(() => {
       setIsLoading(false)
@@ -89,7 +113,7 @@ export default function Page() {
     Axios.get(ApiEndpoint.MEMBER_ALL)
     .then((res) => {
       const options = res.data.data.map((member: any) => ({
-        label: member.name,
+        label: `${member.code} - ${member.name}`,
         value: member.id,
       }));
 
@@ -106,29 +130,34 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getContentOptions()
+    getSiteOptions()
     getMemberOptions()
   }, [])
 
+  const deleteBarcode = (id: string) => {
+    setBarcodes([...barcodes.filter((item) => item.id !== id)])
+  }
+
   useEffect(() => {
-  (async () => {
-    try {
-      const availableDevices = await navigator.mediaDevices.enumerateDevices();
-      const availableVideoDevices = availableDevices.filter(device => device.kind === 'videoinput');
-      if (availableVideoDevices.length === 1) {
-        setDeviceId(availableDevices[0].deviceId)
-      }
-      if (availableVideoDevices.length === 0) {
-        console.log('no device found');
-      } else {
-        console.log(availableVideoDevices);
-        setDevices(availableVideoDevices);
-      }
+    if(!scanPaused) {
+      navigator.mediaDevices.getUserMedia({ audio: false, video: true })
+      .then(() => {
+        navigator.mediaDevices.enumerateDevices()
+        .then((availableDevices) => {          
+          const availableVideoDevices = availableDevices.filter(device => device.kind === 'videoinput');
+          if (availableVideoDevices.length === 1) {
+            setDeviceId(availableDevices[0].deviceId)
+          }
+          if (availableVideoDevices.length === 0) {
+            console.log('no camera found');
+          } else {
+            setDevices(availableVideoDevices);
+            setDeviceId(availableVideoDevices[0].deviceId)
+          }
+        })
+      })
     }
-    catch (e) {
-      
-    }
-  })()}, []);
+  }, [scanPaused]);
 
   return (
     <Grid container spacing={5} className="w-full" size={12}>
@@ -146,52 +175,14 @@ export default function Page() {
             <CardContent>
               <Grid container columnSpacing={4}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth size="small" variant="standard" className="outlined">
-                    <FormLabel component="label">Cabang</FormLabel>
-                    <Select
-                      value={site}
-                      label="Jenis"
-                      onChange={(e: any) => setSite(e.target.value)}
-                      IconComponent={NiChevronDownSmall}
-                      MenuProps={{ className: "outlined" }}
-                    >
-                      {siteOptions.map((item: any, idx: any) => (
-                        <MenuItem key={idx} value={item?.id}>{item?.name}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth>
-                    <FormLabel component="label">Member</FormLabel>
-                    <Autocomplete
-                      size="small"
-                      popupIcon={<NiChevronDownSmall />}
-                      clearIcon={<NiCross />}
-                      value={member}
-                      options={memberOptions}
-                      renderInput={(params) => (
-                        <TextField {...params} variant="standard" className="outlined" placeholder="" />
-                      )}
-                      slotProps={{
-                        popper: { className: "outlined" },
-                        chip: {
-                          variant: "filled",
-                          size: "small",
-                        },
-                      }}
-                    />
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl variant="standard" fullWidth className="outlined">
-                    <FormLabel component="label">Tanggal</FormLabel>
+                    <FormLabel component="label">Tanggal *</FormLabel>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DateTimePicker
-                        // value={dayjs(date)}
+                        value={date}
                         format="DD/MM/YYYY hh:mm"
                         className="mb-0"
-                        // onChange={(e: any) => setDate(e.target.value)}
+                        onChange={(value) => value !== null && setDate(value)}
                         slots={{
                           openPickerIcon: (props) => {
                             return <NiCalendar {...props} className={cn(props.className, "text-text-secondary")} />;
@@ -218,8 +209,48 @@ export default function Page() {
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined">
+                    <FormLabel component="label">Cabang *</FormLabel>
+                    <Select
+                      value={site}
+                      label="Jenis"
+                      onChange={(e: any) => setSite(e.target.value)}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                    >
+                      {siteOptions.map((item: any, idx: any) => (
+                        <MenuItem key={idx} value={item?.id}>{item?.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <FormControl fullWidth>
+                    <FormLabel component="label">Member</FormLabel>
+                    <Autocomplete
+                      size="small"
+                      popupIcon={<NiChevronDownSmall />}
+                      clearIcon={<NiCross />}
+                      value={member}
+                      options={memberOptions}
+                      getOptionKey={(option) => option.value}
+                      onChange={(_, val) => val !== null && setMember(val)}
+                      renderInput={(params) => (
+                        <TextField {...params} variant="standard" className="outlined" placeholder="" />
+                      )}
+                      slotProps={{
+                        popper: { className: "outlined" },
+                        chip: {
+                          variant: "filled",
+                          size: "small",
+                        },
+                      }}
+                    />
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl>
-                    <FormLabel>Masuk/Keluar</FormLabel>
+                    <FormLabel>Masuk/Keluar *</FormLabel>
                     <RadioGroup
                       name="controlled-radio-buttons-group"
                       value={transactionType}
@@ -228,36 +259,30 @@ export default function Page() {
                     >
                       <FormControlLabel
                         value="in"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Masuk"
                       />
                       <FormControlLabel
                         value="out"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Keluar"
                       />
                       <FormControlLabel
                         value="return"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Retur"
                       />
                       <FormControlLabel
                         value="sell"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Jual"
                       />
                     </RadioGroup>
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl className="outlined" variant="standard" size="small" fullWidth>
-                    <FormLabel component="label">Catatan</FormLabel>
-                    <Input value={note} placeholder="" onChange={(e: any) => setNote(e.target.value)} />
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl>
-                    <FormLabel>Kondisi Tabung</FormLabel>
+                    <FormLabel>Kondisi Tabung *</FormLabel>
                     <RadioGroup
                       name="controlled-radio-buttons-group"
                       value={tubeStatus}
@@ -266,30 +291,36 @@ export default function Page() {
                     >
                       <FormControlLabel
                         value="filled"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Isi"
                       />
                       <FormControlLabel
                         value="empty"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Kosong"
                       />
                       <FormControlLabel
                         value="broken"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Rusak"
                       />
                       <FormControlLabel
                         value="expired"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Afkir"
                       />
                       <FormControlLabel
                         value="display"
-                        control={<Radio icon={<RadiobuttonSmallEmpty />} checkedIcon={<RadiobuttonSmallChecked />} />}
+                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Display"
                       />
                     </RadioGroup>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <FormControl className="outlined" variant="standard" size="small" fullWidth>
+                    <FormLabel component="label">Catatan</FormLabel>
+                    <Input value={note} placeholder="" onChange={(e: any) => setNote(e.target.value)} />
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -319,28 +350,92 @@ export default function Page() {
                 </Grid>
               </Grid>
 
-              <Box className="flex border border-grey-100 p-4 rounded-md my-4">
+              <Box className="flex flex-col border border-grey-100 p-4 rounded-md my-4">
                 <Box>
-                  <Button
-                    className="icon-only"
-                    size="large"
-                    color="primary"
-                    variant="contained"
-                    startIcon={<NiCamera size={"large"} />}
-                  />
+                  <Box className="flex justify-between items-center">
+                    <Typography variant="h5">Hasil Scan</Typography>
+                    <Box className="flex items-center gap-1">
+                      <FormControl className="outlined mb-0" variant="standard" size="small">
+                        <Input
+                          value={manualBarcode}
+                          placeholder="Barcode"
+                          onChange={(e) => setManualBarcode(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              if (manualBarcode != "" || manualBarcode != undefined) {
+                                if (!checkBarcodeExists(manualBarcode)) {
+                                  setBarcodes(prev => [...prev, { id: crypto.randomUUID().toString(), value: manualBarcode }])
+                                }
+                                setManualBarcode("")
+                              }
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <Button
+                        className="icon-only"
+                        size="large"
+                        color="primary"
+                        variant="contained"
+                        onClick={() => setScanPaused(!scanPaused)}
+                        startIcon={<NiCamera size={"large"} />}
+                      />
+                    </Box>
+                  </Box>
+                  <Dialog fullScreen={fullScreenResponsive} open={!scanPaused} onClose={() => setScanPaused(true)}>
+                    <DialogTitle>Scan Barcode</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText className="mb-4 text-justify">
+                        Pilih kamera dengan kualitas terbaik agar proses scan lebih cepat
+                      </DialogContentText>
+                      <Box className="w-full flex flex-col gap-2">
+                        <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                          <Select
+                            value={deviceId}
+                            label="Kamera"
+                            onChange={(e: any) => setDeviceId(e.target.value)}
+                            IconComponent={NiChevronDownSmall}
+                            MenuProps={{ className: "outlined" }}
+                          >
+                            {devices.map((item, idx: any) => (
+                              <MenuItem key={idx} value={item.deviceId}>{item.label}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <video className="w-full" ref={ref} />
+                        <DialogContentText className="mt-2 text-center text-success">
+                          {scanResult}
+                        </DialogContentText>
+                      </Box>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setScanPaused(true)}>Tutup</Button>
+                    </DialogActions>
+                  </Dialog>
                 </Box>
-                <Box className="flex flex-col">
-                  <Typography variant="subtitle2">
-                    Hasil Scan
-                  </Typography>
-                  <video width="300" ref={ref} />
-                </Box>
+                {barcodes.length > 0 && (
+                  <Grid container spacing={2} className="mt-2">
+                    {barcodes.map((item, key) => (
+                      <Grid key={key} size={{ xs: 12, md: 6, lg: 4 }} className="flex justify-between items-center rounded border border-grey-100 p-2">
+                        <Box>{item.value}</Box>
+                        <Button
+                          onClick={() => deleteBarcode(item.id)}
+                          className="icon-only p-1!"
+                          size="small"
+                          endIcon={<NiCross />}
+                          variant="pastel"
+                          color="error"
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                )}
               </Box>
               <Box className="w-full flex justify-end">
                 <Button
                   size="large"
                   endIcon={<NiFloppyDisk />}
-                  // loading={isLoading}
+                  loading={isLoading}
                   loadingPosition="end"
                   variant="pastel"
                   color="primary"
