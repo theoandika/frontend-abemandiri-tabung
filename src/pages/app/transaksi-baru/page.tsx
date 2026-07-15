@@ -21,7 +21,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  useMediaQuery
+  useMediaQuery,
 } from "@mui/material";
 import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint"
@@ -30,7 +30,6 @@ import { useZxing } from 'react-zxing';
 
 import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
-import NiUploadCloud from "@/icons/nexture/ni-upload-cloud";
 import { styled, useTheme } from '@mui/material/styles';
 import NiCross from "@/icons/nexture/ni-cross";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
@@ -41,6 +40,9 @@ import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import NiCamera from "@/icons/nexture/ni-camera";
+import axios from "@/api/axios";
+import { useDropzone } from "react-dropzone";
+import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -65,16 +67,80 @@ export default function Page() {
   const [tubeStatus, setTubeStatus] = useState("")
   const [note, setNote] = useState("")
   const [nominal, setNominal] = useState("")
-  const [document, setDocument] = useState(null)
+  const [document, setDocument] = useState<(any & { preview: string }[])>([]);
   const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>([])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string>("");
   const [scanPaused, setScanPaused] = useState(true)
   const [scanResult, setScanResult] = useState<string>("")
   const [manualBarcode, setManualBarcode] = useState<string>("")
+  const [errors, setErrors] = useState<Record<string, string[]>>()
 
   const theme = useTheme();
   const fullScreenResponsive = useMediaQuery(theme.breakpoints.down("md"));
+
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: {
+      "image/jpg": [],
+      "image/png": [],
+      "image/jpeg": [],
+      "application/pdf": [],
+    },
+    onDrop: (acceptedFiles) => {
+      const newFiles: any[] = [];
+      acceptedFiles.map((file) => {
+        const newFile = Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        });
+        newFiles.push(newFile);
+      });
+      setDocument(newFiles);
+    },
+  });
+
+  const handleRemoveImage = () => {
+    setDocument([]);
+  };
+
+  const thumbs = document.map((file: any) => (
+    <Box
+      key={file.name}
+      className="bg-grey-25 flex-non flex w-full cursor-default flex-row items-start rounded-sm p-1"
+      onClick={(event) => {
+        event.stopPropagation();
+      }}
+    >
+      <img
+        alt={file.name}
+        src={file.preview}
+        className="h-12 w-16 rounded-xs object-cover"
+        onLoad={() => {
+          URL.revokeObjectURL(file.preview);
+        }}
+      />
+      <Box className="flex flex-1 flex-row items-center justify-between gap-1 px-3 py-2">
+        <Box className="flex flex-col">
+          <Typography variant="body1" component="p" className="line-clamp-1 leading-3.5">
+            {file.name}
+          </Typography>
+          <Typography variant="body2" component="p" className="text-text-secondary">
+            {Math.round(file.size / 1000)} KB
+          </Typography>
+        </Box>
+        <Button
+          onClick={(event) => {
+            event.stopPropagation();
+            handleRemoveImage();
+          }}
+          className="icon-only hover:text-primary! flex-none"
+          size="tiny"
+          color="grey"
+          variant="pastel"
+          startIcon={<NiBinEmpty size={"tiny"} />}
+        />
+      </Box>
+    </Box>
+  ));
 
   const checkBarcodeExists = (barcode: string) => {
     return barcodes.findIndex(item => item.value === barcode) === -1 ? false : true
@@ -124,9 +190,33 @@ export default function Page() {
     })
   }
 
-  const save = (e: any) => {
-    e.preventDefault();
+  const save = () => {
+    setIsLoading(true)
+    const data = new FormData();
+    data.append('site', site);
+    data.append('member', member?.value ?? "")
+    data.append('date', date.format("YYYY-MM-DD hh:mm"))
+    data.append('transaction_type', transactionType)
+    data.append('tube_status', tubeStatus)
+    data.append('note', note)
+    data.append('nominal', nominal)
+    if (document) {
+      data.append('document', document[0])
+    }
+    barcodes.map((item) => {
+      data.append('barcodes[]', item.value)
+    })
 
+    axios.post(ApiEndpoint.CREATE_MEMBER_TRANSACCTION, data)
+    .then((res) => {
+      console.log('success');
+    })
+    .catch((err) => {
+      setErrors(err?.response?.data?.errors);
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
   }
 
   useEffect(() => {
@@ -145,11 +235,11 @@ export default function Page() {
         navigator.mediaDevices.enumerateDevices()
         .then((availableDevices) => {          
           const availableVideoDevices = availableDevices.filter(device => device.kind === 'videoinput');
-          if (availableVideoDevices.length === 1) {
-            setDeviceId(availableDevices[0].deviceId)
-          }
           if (availableVideoDevices.length === 0) {
             console.log('no camera found');
+          } else if (availableVideoDevices.length === 1) {
+            setDevices(availableVideoDevices);
+            setDeviceId(availableVideoDevices[0].deviceId)
           } else {
             setDevices(availableVideoDevices);
             setDeviceId(availableVideoDevices[0].deviceId)
@@ -206,6 +296,7 @@ export default function Page() {
                         }}
                       />
                     </LocalizationProvider>
+                    {errors != undefined && errors['date'] && <FormLabel component="label" className="text-error! ml-4 mt-0.25 text-sm!">{errors['date'][0]}</FormLabel>} 
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -330,22 +421,21 @@ export default function Page() {
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth>
+                  <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Jaminan Dokumen</FormLabel>
-                    <Button
-                      component="label"
-                      role={undefined}
-                      variant="contained"
-                      tabIndex={-1}
-                      startIcon={<NiUploadCloud />}
+                    <Box
+                      {...getRootProps({ className: "dropzone" })}
+                      className="border-grey-200 hover:border-grey-500 flex min-h-22.5 flex-row flex-wrap gap-2.5 rounded-md border p-4 transition-all"
                     >
-                      Upload files
-                      <VisuallyHiddenInput
-                        type="file"
-                        accept="image/png, image/jpeg, image/jpg"
-                        onChange={(event) => console.log(event.target.files)}
-                      />
-                    </Button>
+                      <input {...getInputProps()} />
+                      {document.length > 0 ? (
+                        thumbs
+                      ) : (
+                        <Typography variant="body1" className="pointer-events-none w-full self-center text-center">
+                          Pilih dokumen atau gambar
+                        </Typography>
+                      )}
+                    </Box>
                   </FormControl>
                 </Grid>
               </Grid>
@@ -439,6 +529,7 @@ export default function Page() {
                   loadingPosition="end"
                   variant="pastel"
                   color="primary"
+                  onClick={() => save()}
                 >Simpan</Button>
               </Box>
             </CardContent>

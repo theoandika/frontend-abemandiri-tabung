@@ -18,6 +18,9 @@ const ApiEndpoint = {
 
     // tube content
     TUBE_CONTENT_ALL: 'tube-content-types',
+
+    // member transaction
+    CREATE_MEMBER_TRANSACCTION: 'transactions'
 }
 
 export default ApiEndpoint
