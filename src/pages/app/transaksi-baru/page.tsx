@@ -22,41 +22,35 @@ import {
   DialogContentText,
   DialogActions,
   useMediaQuery,
+  Collapse,
+  Alert,
+  Chip,
+  Tooltip,
 } from "@mui/material";
-import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint"
 import { cn } from "@/lib/utils";
 import { useZxing } from 'react-zxing';
-
-import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
-import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
-import { styled, useTheme } from '@mui/material/styles';
-import NiCross from "@/icons/nexture/ni-cross";
+import { useTheme } from '@mui/material/styles';
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
+import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
+import axios from "@/api/axios";
+import { useDropzone } from "react-dropzone";
+
+import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
+import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
+import NiCross from "@/icons/nexture/ni-cross";
 import NiCalendar from "@/icons/nexture/ni-calendar";
 import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
-import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import NiCamera from "@/icons/nexture/ni-camera";
-import axios from "@/api/axios";
-import { useDropzone } from "react-dropzone";
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
-
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
+import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import { useNavigate } from "react-router-dom";
 
 export default function Page() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false)
   const [site, setSite] = useState("")
   const [siteOptions, setSiteOptions] = useState([])
@@ -75,15 +69,14 @@ export default function Page() {
   const [scanResult, setScanResult] = useState<string>("")
   const [manualBarcode, setManualBarcode] = useState<string>("")
   const [errors, setErrors] = useState<Record<string, string[]>>()
+  const [errorMessage, setErrorMessage] = useState<string>("")
+  const [errorBarcodes, setErrorBarcodes] = useState<{barcode: string, message: string}[]>([])
 
   const theme = useTheme();
   const fullScreenResponsive = useMediaQuery(theme.breakpoints.down("md"));
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
-      "image/jpg": [],
-      "image/png": [],
-      "image/jpeg": [],
       "application/pdf": [],
     },
     onDrop: (acceptedFiles) => {
@@ -162,7 +155,7 @@ export default function Page() {
 
   const getSiteOptions = () => {
     setIsLoading(true)
-    Axios.get(ApiEndpoint.SITE_ALL)
+    axios.get(ApiEndpoint.SITE_ALL)
     .then((res) => {
       setSiteOptions(res?.data?.data)
       if (res?.data?.data?.length === 1) {
@@ -176,7 +169,7 @@ export default function Page() {
   const getMemberOptions = () => {
     setMemberOptions([])
     setIsLoading(true)
-    Axios.get(ApiEndpoint.MEMBER_ALL)
+    axios.get(ApiEndpoint.MEMBER_ALL)
     .then((res) => {
       const options = res.data.data.map((member: any) => ({
         label: `${member.code} - ${member.name}`,
@@ -200,7 +193,7 @@ export default function Page() {
     data.append('tube_status', tubeStatus)
     data.append('note', note)
     data.append('nominal', nominal)
-    if (document) {
+    if (document.length) {
       data.append('document', document[0])
     }
     barcodes.map((item) => {
@@ -208,11 +201,14 @@ export default function Page() {
     })
 
     axios.post(ApiEndpoint.CREATE_MEMBER_TRANSACCTION, data)
-    .then((res) => {
-      console.log('success');
+    .then(() => {
+      navigate('/transaksi-member')
     })
     .catch((err) => {
-      setErrors(err?.response?.data?.errors);
+      let errData = err?.response?.data
+      setErrors(errData?.errors);
+      setErrorMessage(errData?.message);
+      errData?.data && setErrorBarcodes(errData.data)
     })
     .finally(() => {
       setIsLoading(false)
@@ -260,6 +256,15 @@ export default function Page() {
       </Grid>
 
       <Grid size={12}>
+        {errorMessage && (
+          <Box>
+            <Collapse in={true}>
+              <Alert className="mb-2" color="error" icon={<NiCrossSquare />} >
+                {errorMessage}
+              </Alert>
+            </Collapse>
+          </Box>
+        )}
         <Box>
           <Card>
             <CardContent>
@@ -270,7 +275,8 @@ export default function Page() {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DateTimePicker
                         value={date}
-                        format="DD/MM/YYYY hh:mm"
+                        format="DD/MM/YYYY H:mm"
+
                         className="mb-0"
                         onChange={(value) => value !== null && setDate(value)}
                         slots={{
@@ -296,7 +302,7 @@ export default function Page() {
                         }}
                       />
                     </LocalizationProvider>
-                    {errors != undefined && errors['date'] && <FormLabel component="label" className="text-error! ml-4 mt-0.25 text-sm!">{errors['date'][0]}</FormLabel>} 
+                    {errors != undefined && errors['date'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['date'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -304,7 +310,7 @@ export default function Page() {
                     <FormLabel component="label">Cabang *</FormLabel>
                     <Select
                       value={site}
-                      label="Jenis"
+                      label="Cabang"
                       onChange={(e: any) => setSite(e.target.value)}
                       IconComponent={NiChevronDownSmall}
                       MenuProps={{ className: "outlined" }}
@@ -313,6 +319,7 @@ export default function Page() {
                         <MenuItem key={idx} value={item?.id}>{item?.name}</MenuItem>
                       ))}
                     </Select>
+                    {errors != undefined && errors['site'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['site'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -325,7 +332,7 @@ export default function Page() {
                       value={member}
                       options={memberOptions}
                       getOptionKey={(option) => option.value}
-                      onChange={(_, val) => val !== null && setMember(val)}
+                      onChange={(_, val) => setMember(val ?? null)}
                       renderInput={(params) => (
                         <TextField {...params} variant="standard" className="outlined" placeholder="" />
                       )}
@@ -337,6 +344,7 @@ export default function Page() {
                         },
                       }}
                     />
+                    {errors != undefined && errors['member'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['member'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -369,6 +377,7 @@ export default function Page() {
                         label="Jual"
                       />
                     </RadioGroup>
+                    {errors != undefined && errors['transaction_type'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['transaction_type'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -406,18 +415,21 @@ export default function Page() {
                         label="Display"
                       />
                     </RadioGroup>
+                    {errors != undefined && errors['tube_status'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['tube_status'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Catatan</FormLabel>
                     <Input value={note} placeholder="" onChange={(e: any) => setNote(e.target.value)} />
+                    {errors != undefined && errors['note'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['note'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Jaminan Nominal</FormLabel>
                     <Input type="number" value={nominal} placeholder="" onChange={(e: any) => setNominal(e.target.value)} />
+                    {errors != undefined && errors['nominal'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['nominal'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -432,10 +444,11 @@ export default function Page() {
                         thumbs
                       ) : (
                         <Typography variant="body1" className="pointer-events-none w-full self-center text-center">
-                          Pilih dokumen atau gambar
+                          Pilih dokumen (.pdf)
                         </Typography>
                       )}
                     </Box>
+                    {errors != undefined && errors['document'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['document'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
               </Grid>
@@ -452,7 +465,7 @@ export default function Page() {
                           onChange={(e) => setManualBarcode(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                              if (manualBarcode != "" || manualBarcode != undefined) {
+                              if (manualBarcode != "" && manualBarcode != undefined) {
                                 if (!checkBarcodeExists(manualBarcode)) {
                                   setBarcodes(prev => [...prev, { id: crypto.randomUUID().toString(), value: manualBarcode }])
                                 }
@@ -505,21 +518,21 @@ export default function Page() {
                 </Box>
                 {barcodes.length > 0 && (
                   <Grid container spacing={2} className="mt-2">
-                    {barcodes.map((item, key) => (
-                      <Grid key={key} size={{ xs: 12, md: 6, lg: 4 }} className="flex justify-between items-center rounded border border-grey-100 p-2">
-                        <Box>{item.value}</Box>
-                        <Button
-                          onClick={() => deleteBarcode(item.id)}
-                          className="icon-only p-1!"
-                          size="small"
-                          endIcon={<NiCross />}
-                          variant="pastel"
-                          color="error"
-                        />
-                      </Grid>
-                    ))}
+                    {barcodes.map(item => {
+                      let errExists = errorBarcodes.find(i => i.barcode == item.value)
+                      return (
+                        errExists ? (
+                          <Tooltip title={errExists.message}>
+                            <Chip key={item.id} variant="outlined" color="error" label={item.value} onDelete={() => deleteBarcode(item.id)} />
+                          </Tooltip>
+                        ) : (
+                          <Chip key={item.id} variant="outlined" label={item.value} onDelete={() => deleteBarcode(item.id)} />
+                        )
+                      )
+                    })}
                   </Grid>
                 )}
+              {errors != undefined && errors['barcodes'] && <FormLabel component="label" className="text-error! text-sm!">{errors['barcodes'][0]}</FormLabel>}
               </Box>
               <Box className="w-full flex justify-end">
                 <Button

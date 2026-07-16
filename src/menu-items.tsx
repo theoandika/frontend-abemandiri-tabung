@@ -111,20 +111,20 @@ export const leftMenuItems: MenuItem[] = [
         href: "/tabung",
       },
       {
-        id: "add-site",
+        id: "add-tube",
         icon: "NiPlusSquare",
         label: "Tambah Tabung",
         color: "text-primary",
         href: "/tambah-tabung",
+      },
+      {
+        id: "change-tube-barcode",
+        icon: "NiPenSquare",
+        label: "Ubah Barcode",
+        color: "text-primary",
+        href: "/ubah-barcode",
       }
     ]
-  },
-  {
-    id: "barcode",
-    icon: "NiBarcode",
-    label: "Barcode Tabung",
-    color: "text-primary",
-    href: "/barcode"
   },
   {
     id: "transaction",

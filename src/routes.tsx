@@ -6,6 +6,11 @@ import AppLayout from "@/pages/app/layout";
 import Loading from "@/pages/loading.tsx";
 import NotFound from "@/pages/not-found";
 import { MenuItem } from "@/types/types";
+import UbahCabang from "@/pages/app/cabang/ubah";
+import UbahSupplier from "@/pages/app/supplier/ubah";
+import UbahMember from "@/pages/app/member/ubah";
+import UbahJenisIsi from "@/pages/app/jenis-isi/ubah";
+import UbahTabung from "@/pages/app/tabung/ubah";
 
 // Statically import all possible pages for build
 const modules = import.meta.glob("./pages/**/page.tsx");
@@ -72,6 +77,11 @@ const AppRoutes = () => {
       <Route element={<AppLayout />}>
         {mainRoutes}
         {bottomRoutes}
+        <Route path="/ubah-cabang/:id" element={<UbahCabang />} />
+        <Route path="/ubah-supplier/:id" element={<UbahSupplier />} />
+        <Route path="/ubah-member/:id" element={<UbahMember />} />
+        <Route path="/ubah-jenis-isi/:id" element={<UbahJenisIsi />} />
+        <Route path="/ubah-tabung/:id" element={<UbahTabung />} />
       </Route>
 
       {/* 404 route */}

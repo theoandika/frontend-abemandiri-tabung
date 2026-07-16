@@ -20,6 +20,7 @@ import {
   GridActionsCellItem,
   GridColDef,
   GridRenderCellParams,
+  GridRowId,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
@@ -47,38 +48,29 @@ import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import { cn } from "@/lib/utils";
-
+import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
-import NiBarcode from "@/icons/nexture/ni-barcode";
-import axios from "@/api/axios";
-import DeleteConfirmation from "@/components/dialog/delete-confirmation";
-import NiPenSquare from "@/icons/nexture/ni-pen-square";
+import dayjs from "dayjs";
+import 'dayjs/locale/id'
 
 interface Row {
-  id: string,
+  id: string
   site: {
-    id: string,
+    id: string
+    name: string
+  }
+  member?: {
+    id: string
+    code: string
     name: string
   },
-  number: string,
-  barcode?: string,
-  tube_content: {
-    id: string,
-    code: string,
-    name: string
-  },
-  type: string,
-  own: boolean,
-  active: boolean,
-  status: string,
-  position: string,
-  second_owner?: {
-    id: string,
-    code: string,
-    name: string
-  },
-  photo?: string
+  date: string
+  transaction_type: "in" | "out" | "return" | "sell"
+  tube_status: "filled" | "empty" | "broken" | "expired" | "display"
+  nominal?: number
+  document?: string
+  item_count: number
 };
 
 export default function Page() {
@@ -100,11 +92,9 @@ export default function Page() {
 
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
-  const [deleteId, setDeleteId] = useState<string>("")
 
   const getRows = () => {
-    axios.post(ApiEndpoint.TUBE_INDEX)
+    Axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
@@ -115,104 +105,67 @@ export default function Page() {
     getRows()
   }, [])
 
-  const doDelete = (id: string) => {
-    setDeleteId(id)
-    setDeleteDialogOpen(true)
-  }
-
-  const deleteRow = () => {
-    axios.delete(ApiEndpoint.CREATE_TUBE + "/" + deleteId)
-    .then (() => {
-      getRows()
-    })
-  }
+  const deleteTube = useCallback(
+    (id: GridRowId) => () => {
+      setTimeout(() => {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+      });
+    },
+    [],
+  );
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
-      field: "number",
-      headerName: "Nomor",
-      width: 120,
+      field: "date",
+      headerName: "Tanggal",
+      width: 150,
       editable: false,
+      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY H:mm")
     },
     {
-      field: "barcode",
-      headerName: "Barcode",
-      width: 120,
+      field: "site",
+      headerName: "Cabang",
+      width: 200,
       editable: false,
+      valueGetter: (_, row) => row.site.name,
     },
     {
-      field: "tube_content",
-      headerName: "Isi",
-      width: 100,
+      field: "member",
+      headerName: "Member",
+      width: 150,
       editable: false,
-      valueGetter: (_, row) => row.tube_content?.name,
+      valueGetter: (_, row) => row.member ? `${row.member?.code} - ${row.member?.name}` : '',
     },
     {
-      field: "type",
-      headerName: "Jenis",
-      width: 100,
-      editable: false,
-      valueFormatter: (value) => {
-        switch (value) {
-          case "medical":
-            return "Medis";
-          case "industry":
-            return "Industri";
-          default:
-            return "";
-        }
-      },
-    },
-    {
-      field: "own",
-      headerName: "Tabung DM",
-      width: 100,
-      align: "left",
-      headerAlign: "left",
-      editable: false,
-      type: "boolean",
-      renderCell: (params: GridRenderCellParams<any, boolean>) => {
-        const value = params.value;
-        return (
-          <Box>
-            {value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />}
-          </Box>
-        )
-      },
-    },
-    {
-      field: "position",
-      headerName: "Posisi Tabung",
+      field: "transaction_type",
+      headerName: "Masuk/Keluar",
       width: 100,
       editable: false,
       type: "singleSelect",
       valueOptions: [
-        { value: "site", label: 'Cabang' },
-        { value: "supplier", label: 'Supplier' },
-        { value: "member", label: 'Member' },
-        { value: "transit", label: 'Transit' },
-        { value: "unknown", label: 'Tidak diketahui' },
+        { value: "in", label: 'Masuk' },
+        { value: "out", label: 'Keluar' },
+        { value: "return", label: 'Retur' },
+        { value: "sell", label: 'Jual' },
       ],
       valueFormatter: (value) => {
         switch (value) {
-          case "site":
-            return "Cabang";
-          case "supplier":
-            return "Supplier";
-          case "member":
-            return "Member";
-          case "transit":
-            return "Transit";
-          case "unknown":
-            return "Tidak diketahui";
+          case "in":
+            return "Masuk";
+          case "out":
+            return "Keluar";
+          case "return":
+            return "Retur";
+          case "sell":
+            return "Jual";
           default:
             return "";
         }
       },
     },
     {
-      field: "status",
+      field: "tube_status",
       headerName: "Kondisi",
       width: 100,
       editable: false,
@@ -224,38 +177,20 @@ export default function Page() {
         { value: "expired", label: 'Afkir' },
         { value: "display", label: 'Pajangan' },
       ],
-      renderCell: (params: GridRenderCellParams<any, string>) => {
-        const value = params.value;
+      valueFormatter: (value) => {
         switch (value) {
           case "filled":
-            return "Isi"
+            return "Isi";
           case "empty":
-            return "Kosong"
+            return "Kosong";
           case "broken":
-            return "Rusak"
+            return "Rusak";
           case "expired":
-            return "Afkir"
+            return "Afkir";
           case "display":
-            return "Pajangan"
+            return "Pajangan";
           default:
-            return "Tidak diketahui"
-        }
-      },
-    },
-    {
-      field: "active",
-      headerName: "Aktif",
-      width: 100,
-      align: "left",
-      headerAlign: "left",
-      editable: false,
-      type: "boolean",
-      renderCell: (params: GridRenderCellParams<any, boolean>) => {
-        const value = params.value;
-        if (typeof value !== undefined) {
-          return value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />;
-        } else {
-          return <Box></Box>;
+            return "";
         }
       },
     },
@@ -272,14 +207,7 @@ export default function Page() {
           key={0}
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
-          onClick={() => doDelete(params.row.id)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          key={1}
-          icon={<NiPenSquare size="medium" />}
-          label="Ubah"
-          onClick={() => navigate("/ubah-tabung/" + params.row.id)}
+          onClick={deleteTube(params.id)}
           showInMenu
         />,
       ],
@@ -293,7 +221,7 @@ export default function Page() {
           <Grid container spacing={2.5} className="w-full" size={12}>
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">
-                Daftar Tabung
+                Transaksi Member
               </Typography>
             </Grid>
 
@@ -324,17 +252,6 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Ubah Barcode">
-                <Button
-                  className="icon-only surface-standard"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiBarcode size={"medium"} />}
-                  onClick={() => navigate('/ubah-barcode')}
-                />
-              </Tooltip>
-
               <Tooltip title="Tambah Tabung">
                 <Button
                   className="icon-only surface-standard"
@@ -342,7 +259,7 @@ export default function Page() {
                   color="grey"
                   variant="surface"
                   startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/tambah-tabung')}
+                  onClick={() => navigate('/transaksi-baru')}
                 />
               </Tooltip>
             </Grid>
@@ -386,7 +303,6 @@ export default function Page() {
 
   return (
     <Grid container spacing={5}>
-      <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
           rows={rows}

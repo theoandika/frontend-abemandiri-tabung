@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  Box,
   Button,
   FilledInput,
   FormControl,
@@ -19,7 +18,7 @@ import {
   DataGrid,
   GridActionsCellItem,
   GridColDef,
-  GridRenderCellParams,
+  GridRenderEditCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
@@ -28,10 +27,9 @@ import {
   Toolbar,
 } from "@mui/x-data-grid";
 
-// import DataGridInput from "@/components/data-grid/data-grid-input";
+import DataGridInput from "@/components/data-grid/data-grid-input";
 // import { DataGridPaginationFullPage } from "@/components/data-grid/data-grid-pagination";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
-import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
@@ -45,40 +43,19 @@ import NiFilter from "@/icons/nexture/ni-filter";
 import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
 import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
-import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import { cn } from "@/lib/utils";
 
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
-import NiBarcode from "@/icons/nexture/ni-barcode";
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
 
 interface Row {
   id: string,
-  site: {
-    id: string,
-    name: string
-  },
-  number: string,
-  barcode?: string,
-  tube_content: {
-    id: string,
-    code: string,
-    name: string
-  },
-  type: string,
-  own: boolean,
-  active: boolean,
-  status: string,
-  position: string,
-  second_owner?: {
-    id: string,
-    code: string,
-    name: string
-  },
-  photo?: string
+  code: string,
+  name: string,
+  description: string
 };
 
 export default function Page() {
@@ -104,7 +81,7 @@ export default function Page() {
   const [deleteId, setDeleteId] = useState<string>("")
 
   const getRows = () => {
-    axios.post(ApiEndpoint.TUBE_INDEX)
+    axios.post(ApiEndpoint.SUPPLIER_INDEX)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
@@ -121,7 +98,7 @@ export default function Page() {
   }
 
   const deleteRow = () => {
-    axios.delete(ApiEndpoint.CREATE_TUBE + "/" + deleteId)
+    axios.delete(ApiEndpoint.SUPPLIER + "/" + deleteId)
     .then (() => {
       getRows()
     })
@@ -130,141 +107,32 @@ export default function Page() {
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
-      field: "number",
-      headerName: "Nomor",
-      width: 120,
-      editable: false,
+      field: "code",
+      headerName: "Kode Supplier",
+      width: 200,
+      editable: true,
+      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
     },
     {
-      field: "barcode",
-      headerName: "Barcode",
-      width: 120,
-      editable: false,
+      field: "name",
+      headerName: "Nama Supplier",
+      width: 200,
+      editable: true,
+      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
     },
     {
-      field: "tube_content",
-      headerName: "Isi",
-      width: 100,
-      editable: false,
-      valueGetter: (_, row) => row.tube_content?.name,
-    },
-    {
-      field: "type",
-      headerName: "Jenis",
-      width: 100,
-      editable: false,
-      valueFormatter: (value) => {
-        switch (value) {
-          case "medical":
-            return "Medis";
-          case "industry":
-            return "Industri";
-          default:
-            return "";
-        }
-      },
-    },
-    {
-      field: "own",
-      headerName: "Tabung DM",
-      width: 100,
-      align: "left",
-      headerAlign: "left",
-      editable: false,
-      type: "boolean",
-      renderCell: (params: GridRenderCellParams<any, boolean>) => {
-        const value = params.value;
-        return (
-          <Box>
-            {value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />}
-          </Box>
-        )
-      },
-    },
-    {
-      field: "position",
-      headerName: "Posisi Tabung",
-      width: 100,
-      editable: false,
-      type: "singleSelect",
-      valueOptions: [
-        { value: "site", label: 'Cabang' },
-        { value: "supplier", label: 'Supplier' },
-        { value: "member", label: 'Member' },
-        { value: "transit", label: 'Transit' },
-        { value: "unknown", label: 'Tidak diketahui' },
-      ],
-      valueFormatter: (value) => {
-        switch (value) {
-          case "site":
-            return "Cabang";
-          case "supplier":
-            return "Supplier";
-          case "member":
-            return "Member";
-          case "transit":
-            return "Transit";
-          case "unknown":
-            return "Tidak diketahui";
-          default:
-            return "";
-        }
-      },
-    },
-    {
-      field: "status",
-      headerName: "Kondisi",
-      width: 100,
-      editable: false,
-      type: "singleSelect",
-      valueOptions: [
-        { value: "filled", label: 'Isi' },
-        { value: "empty", label: 'Kosong' },
-        { value: "broken", label: 'Rusak' },
-        { value: "expired", label: 'Afkir' },
-        { value: "display", label: 'Pajangan' },
-      ],
-      renderCell: (params: GridRenderCellParams<any, string>) => {
-        const value = params.value;
-        switch (value) {
-          case "filled":
-            return "Isi"
-          case "empty":
-            return "Kosong"
-          case "broken":
-            return "Rusak"
-          case "expired":
-            return "Afkir"
-          case "display":
-            return "Pajangan"
-          default:
-            return "Tidak diketahui"
-        }
-      },
-    },
-    {
-      field: "active",
-      headerName: "Aktif",
-      width: 100,
-      align: "left",
-      headerAlign: "left",
-      editable: false,
-      type: "boolean",
-      renderCell: (params: GridRenderCellParams<any, boolean>) => {
-        const value = params.value;
-        if (typeof value !== undefined) {
-          return value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />;
-        } else {
-          return <Box></Box>;
-        }
-      },
+      field: "description",
+      headerName: "Deskripsi",
+      minWidth: 200,
+      flex: 1,
+      editable: true,
+      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: "Aksi",
       type: "actions",
       minWidth: 80,
-      flex: 1,
       align: "right",
       headerAlign: "right",
       getActions: (params) => [
@@ -279,7 +147,7 @@ export default function Page() {
           key={1}
           icon={<NiPenSquare size="medium" />}
           label="Ubah"
-          onClick={() => navigate("/ubah-tabung/" + params.row.id)}
+          onClick={() => navigate("/ubah-supplier/"+params.row.id)}
           showInMenu
         />,
       ],
@@ -293,12 +161,12 @@ export default function Page() {
           <Grid container spacing={2.5} className="w-full" size={12}>
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">
-                Daftar Tabung
+                Daftar Supplier
               </Typography>
             </Grid>
 
             <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Columns">
+              <Tooltip title="Pengaturan Kolom">
                 <ColumnsPanelTrigger
                   render={(props) => (
                     <Button
@@ -314,35 +182,14 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Download Excel">
-                <Button
-                  className="icon-only surface-standard flex-none"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiArrowInDown size={"medium"} />}
-                />
-              </Tooltip>
-
-              <Tooltip title="Ubah Barcode">
-                <Button
-                  className="icon-only surface-standard"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiBarcode size={"medium"} />}
-                  onClick={() => navigate('/ubah-barcode')}
-                />
-              </Tooltip>
-
-              <Tooltip title="Tambah Tabung">
+              <Tooltip title="Tambah Supplier">
                 <Button
                   className="icon-only surface-standard"
                   size="medium"
                   color="grey"
                   variant="surface"
                   startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/tambah-tabung')}
+                  onClick={() => navigate('/tambah-supplier')}
                 />
               </Tooltip>
             </Grid>

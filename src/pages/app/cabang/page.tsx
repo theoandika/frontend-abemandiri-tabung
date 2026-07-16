@@ -1,4 +1,4 @@
-import { SyntheticEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   Button,
@@ -8,11 +8,6 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  PopoverVirtualElement,
   Select,
   SelectProps,
   Tooltip,
@@ -21,11 +16,9 @@ import {
 import {
   ColumnsPanelTrigger,
   DataGrid,
-  ExportCsv,
   GridActionsCellItem,
   GridColDef,
   GridRenderEditCellParams,
-  GridRowId,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
@@ -37,7 +30,6 @@ import {
 import DataGridInput from "@/components/data-grid/data-grid-input";
 // import { DataGridPaginationFullPage } from "@/components/data-grid/data-grid-pagination";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
-import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
@@ -45,7 +37,6 @@ import NiChevronLeftRightSmall from "@/icons/nexture/ni-chevron-left-right-small
 import NiCols from "@/icons/nexture/ni-cols";
 import NiCross from "@/icons/nexture/ni-cross";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
-import NiDocumentFull from "@/icons/nexture/ni-document-full";
 import NiEllipsisVertical from "@/icons/nexture/ni-ellipsis-vertical";
 import NiEyeInactive from "@/icons/nexture/ni-eye-inactive";
 import NiFilter from "@/icons/nexture/ni-filter";
@@ -54,8 +45,11 @@ import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
 import { cn } from "@/lib/utils";
 
-import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint"
+import { useNavigate } from "react-router-dom";
+import axios from "@/api/axios";
+import DeleteConfirmation from "@/components/dialog/delete-confirmation";
+import NiPenSquare from "@/icons/nexture/ni-pen-square";
 
 interface Row {
   id: string,
@@ -82,9 +76,12 @@ export default function Page() {
   }, []);
 
   const [rows, setRows] = useState<Row[]>([]);
+  const navigate = useNavigate()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
+  const [deleteId, setDeleteId] = useState<string>("")
 
   const getRows = () => {
-    Axios.post(ApiEndpoint.SITE_INDEX)
+    axios.post(ApiEndpoint.SITE_INDEX)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
@@ -95,14 +92,17 @@ export default function Page() {
     getRows()
   }, [])
 
-  const deleteUser = useCallback(
-    (id: GridRowId) => () => {
-      setTimeout(() => {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
-      });
-    },
-    [],
-  );
+  const doDelete = (id: string) => {
+    setDeleteId(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const deleteRow = () => {
+    axios.delete(ApiEndpoint.SITE_ALL + "/" + deleteId)
+    .then (() => {
+      getRows()
+    })
+  }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
@@ -130,7 +130,7 @@ export default function Page() {
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: "Aksi",
       type: "actions",
       minWidth: 80,
       align: "right",
@@ -140,7 +140,14 @@ export default function Page() {
           key={0}
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
-          onClick={deleteUser(params.id)}
+          onClick={() => doDelete(params.row.id)}
+          showInMenu
+        />,
+        <GridActionsCellItem
+          key={1}
+          icon={<NiPenSquare size="medium" />}
+          label="Ubah"
+          onClick={() => navigate("/ubah-cabang/"+params.row.id)}
           showInMenu
         />,
       ],
@@ -148,15 +155,6 @@ export default function Page() {
   ];
 
   function CustomToolbar() {
-    const [anchorElExport, setAnchorElExport] = useState<EventTarget | Element | PopoverVirtualElement | null>(null);
-    const openExport = Boolean(anchorElExport);
-    const handleClickExport = (event: Event | SyntheticEvent) => {
-      setAnchorElExport(event.currentTarget);
-    };
-    const handleCloseExport = () => {
-      setAnchorElExport(null);
-    };
-
     return (
       <Toolbar className="min-h-auto border-none">
         <Grid container spacing={5} className="mb-4 w-full">
@@ -168,7 +166,7 @@ export default function Page() {
             </Grid>
 
             <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Columns">
+              <Tooltip title="Pengaturan Kolom">
                 <ColumnsPanelTrigger
                   render={(props) => (
                     <Button
@@ -184,48 +182,15 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Export">
+              <Tooltip title="Tambah Cabang">
                 <Button
-                  className="icon-only surface-standard flex-none"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiArrowInDown size={"medium"} />}
-                  onClick={handleClickExport}
-                />
-              </Tooltip>
-
-              <Menu
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-                anchorEl={anchorElExport as Element}
-                open={openExport}
-                onClose={handleCloseExport}
-                className="mt-1"
-              >
-                <ExportCsv
-                  render={
-                    <MenuItem>
-                      <ListItemIcon>
-                        <NiDocumentFull size="medium" />
-                      </ListItemIcon>
-                      <ListItemText>Download Excel</ListItemText>
-                    </MenuItem>
-                  }
-                  onClick={handleCloseExport}
-                />
-              </Menu>
-
-              <Tooltip title="Add Item">
-                <Button
-                  className="surface-standard"
+                  className="icon-only surface-standard"
                   size="medium"
                   color="grey"
                   variant="surface"
                   startIcon={<NiPlus size={"medium"} />}
-                >
-                  Tambah Cabang
-                </Button>
+                  onClick={() => navigate('/tambah-cabang')}
+                />
               </Tooltip>
             </Grid>
           </Grid>
@@ -268,6 +233,7 @@ export default function Page() {
 
   return (
     <Grid container spacing={5}>
+      <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
           rows={rows}

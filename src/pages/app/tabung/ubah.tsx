@@ -23,11 +23,12 @@ import { CheckboxSmallChecked, CheckboxSmallEmptyOutlined } from "@/icons/form/m
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import { useDropzone } from "react-dropzone";
 import axios from "@/api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 
-export default function Page() {
+export default function UbahTabung() {
   const navigate = useNavigate()
+  const { id } = useParams()
   const [isLoading, setIsLoading] = useState(false)
   const [number, setNumber] = useState("")
   const [barcode, setBarcode] = useState("")
@@ -37,6 +38,7 @@ export default function Page() {
   const [own, setOwn] = useState(true)
   const [active, setActive] = useState(true)
   const [photo, setPhoto] = useState<(any & { preview: string }[])>([]);
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string[]>>()
   const [errorMessage, setErrorMessage] = useState<string>("")
 
@@ -63,6 +65,28 @@ export default function Page() {
     axios.get(ApiEndpoint.TUBE_CONTENT_ALL)
     .then((res) => {
       setContentOptions(res?.data?.data)
+      initData()
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
+  }
+
+  const initData = () => {
+    setIsLoading(true)
+    axios.get(ApiEndpoint.CREATE_TUBE + "/" + id)
+    .then((res) => {
+      let data = res.data?.data
+      setNumber(data?.number)
+      setBarcode(data?.barcode)
+      setType(data?.type)
+      setContent(data?.tube_content?.id)
+      setOwn(data?.own)
+      setActive(data?.active)
+      setCurrentPhoto(data?.photo)
+    })
+    .catch(() => {
+      navigate("/404")
     })
     .finally(() => {
       setIsLoading(false)
@@ -82,7 +106,7 @@ export default function Page() {
       data.append('photo', photo[0])
     }
 
-    axios.post(ApiEndpoint.CREATE_TUBE, data)
+    axios.post(ApiEndpoint.CREATE_TUBE + "/" + id, data)
     .then(() => {
       navigate('/tabung')
     })
@@ -107,39 +131,41 @@ export default function Page() {
   const thumbs = photo.map((file: any) => (
     <Box
       key={file.name}
-      className="bg-grey-25 flex-non flex w-full cursor-default flex-row items-start rounded-sm p-1"
+      className="bg-grey-25 flex-non flex w-full cursor-default flex-col items-start rounded-sm p-1"
       onClick={(event) => {
         event.stopPropagation();
       }}
     >
-      <img
-        alt={file.name}
-        src={file.preview}
-        className="h-12 w-16 rounded-xs object-cover"
-        onLoad={() => {
-          URL.revokeObjectURL(file.preview);
-        }}
-      />
-      <Box className="flex flex-1 flex-row items-center justify-between gap-1 px-3 py-2">
-        <Box className="flex flex-col">
-          <Typography variant="body1" component="p" className="line-clamp-1 leading-3.5">
-            {file.name}
-          </Typography>
-          <Typography variant="body2" component="p" className="text-text-secondary">
-            {Math.round(file.size / 1000)} KB
-          </Typography>
-        </Box>
-        <Button
-          onClick={(event) => {
-            event.stopPropagation();
-            handleRemoveImage();
+      <Box className="flex-1 flex flex-row w-full items-center">
+        <img
+          alt={file.name}
+          src={file.preview}
+          className="max-h-20 rounded-xs object-cover"
+          onLoad={() => {
+            URL.revokeObjectURL(file.preview);
           }}
-          className="icon-only hover:text-primary! flex-none"
-          size="tiny"
-          color="grey"
-          variant="pastel"
-          startIcon={<NiBinEmpty size={"tiny"} />}
         />
+        <Box className="flex flex-1 flex-row items-center justify-between gap-1 px-3 py-2">
+          <Box className="flex flex-col">
+            <Typography variant="body1" component="p" className="line-clamp-1 leading-3.5">
+              {file.name}
+            </Typography>
+            <Typography variant="body2" component="p" className="text-text-secondary">
+              {Math.round(file.size / 1000)} KB
+            </Typography>
+          </Box>
+          <Button
+            onClick={(event) => {
+              event.stopPropagation();
+              handleRemoveImage();
+            }}
+            className="icon-only hover:text-primary! flex-none"
+            size="tiny"
+            color="grey"
+            variant="pastel"
+            startIcon={<NiBinEmpty size={"tiny"} />}
+          />
+        </Box>
       </Box>
     </Box>
   ));
@@ -149,7 +175,7 @@ export default function Page() {
       <Grid size={12} container spacing={2.5}>
         <Grid size={{ xs: 12, md: "grow" }}>
           <Typography variant="h1" component="h1" className="mb-0">
-            Tambah Tabung
+            Ubah Tabung
           </Typography>
         </Grid>
       </Grid>
@@ -177,7 +203,7 @@ export default function Page() {
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
-                    <FormLabel component="label">Barcode</FormLabel>
+                    <FormLabel component="label">Barcode (Foto baru dibutuhkan jika diubah)</FormLabel>
                     <Input placeholder="" value={barcode} onChange={e => setBarcode(e.target.value)} />
                     {errors != undefined && errors['barcode'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['barcode'][0]}</FormLabel>}
                   </FormControl>
@@ -252,18 +278,25 @@ export default function Page() {
                 <Grid size={12}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Foto Tabung</FormLabel>
-                    <Box
-                      {...getRootProps({ className: "dropzone" })}
-                      className="border-grey-200 hover:border-grey-500 flex min-h-22.5 flex-row flex-wrap gap-2.5 rounded-md border p-4 transition-all"
-                    >
-                      <input {...getInputProps()} />
-                      {photo.length > 0 ? (
-                        thumbs
-                      ) : (
-                        <Typography variant="body1" className="pointer-events-none w-full self-center text-center">
-                          Pilih file (.png, .jpg)
-                        </Typography>
-                      )}
+                    <Box className="flex gap-4">
+                      <Box>
+                        <img className="max-h-40 rounded-md" src={currentPhoto ?? undefined} />
+                      </Box>
+                      <Box
+                        {...getRootProps({ className: "dropzone" })}
+                        className="flex-1 border-grey-200 hover:border-grey-500 flex min-h-22.5 flex-row flex-wrap gap-2.5 rounded-md border p-4 transition-all"
+                      >
+                        <input {...getInputProps()} />
+                        {photo.length > 0 ? (
+                          thumbs
+                        ) : (
+                          <>
+                            <Typography variant="body1" className="pointer-events-none w-full self-center text-center">
+                              Pilih file untuk mengganti foto lama (.png, .jpg)
+                            </Typography>
+                          </>
+                        )}
+                      </Box>
                     </Box>
                     {errors != undefined && errors['photo'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['photo'][0]}</FormLabel>}
                   </FormControl>
