@@ -171,14 +171,14 @@ export default function Page() {
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Nomor Tabung *</FormLabel>
-                    <Input placeholder="" value={number} onChange={e => setNumber(e.target.value)} />
+                    <Input placeholder="" value={number} onChange={e => setNumber(e.target.value)} disabled={isLoading} />
                     {errors != undefined && errors['number'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['number'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Barcode</FormLabel>
-                    <Input placeholder="" value={barcode} onChange={e => setBarcode(e.target.value)} />
+                    <Input placeholder="" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={isLoading} />
                     {errors != undefined && errors['barcode'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['barcode'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
@@ -191,6 +191,7 @@ export default function Page() {
                       onChange={(e) => setType(e.target.value)}
                       IconComponent={NiChevronDownSmall}
                       MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
                     >
                       <MenuItem value="medical">Medis</MenuItem>
                       <MenuItem value="industry">Industri</MenuItem>
@@ -207,6 +208,7 @@ export default function Page() {
                       onChange={(e) => setContent(e.target.value)}
                       IconComponent={NiChevronDownSmall}
                       MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
                     >
                       {contentOptions.map((item: any, key: any) => (
                         <MenuItem key={key} value={item?.id}>{item?.code} - {item?.name}</MenuItem>
@@ -225,6 +227,7 @@ export default function Page() {
                           checkedIcon={<CheckboxSmallChecked />}
                           onChange={e => setOwn(e.target.value == 'checked' ? true : false)}
                           size="small"
+                          disabled={isLoading}
                         />
                       }
                       label="Tabung DM"
@@ -242,6 +245,7 @@ export default function Page() {
                           checkedIcon={<CheckboxSmallChecked />}
                           onChange={e => setActive(e.target.value == 'checked' ? true : false)}
                           size="small"
+                          disabled={isLoading}
                         />
                       }
                       label="Aktif"
@@ -256,7 +260,7 @@ export default function Page() {
                       {...getRootProps({ className: "dropzone" })}
                       className="border-grey-200 hover:border-grey-500 flex min-h-22.5 flex-row flex-wrap gap-2.5 rounded-md border p-4 transition-all"
                     >
-                      <input {...getInputProps()} />
+                      <input {...getInputProps()} disabled={isLoading} />
                       {photo.length > 0 ? (
                         thumbs
                       ) : (
@@ -273,9 +277,9 @@ export default function Page() {
               <Box className="w-full flex justify-end">
                 <Button
                   size="large"
-                  endIcon={<NiFloppyDisk />}
+                  startIcon={<NiFloppyDisk />}
                   loading={isLoading}
-                  loadingPosition="end"
+                  loadingPosition="start"
                   variant="pastel"
                   color="primary"
                   onClick={() => save()}

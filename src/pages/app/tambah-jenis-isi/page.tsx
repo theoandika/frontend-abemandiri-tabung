@@ -74,14 +74,14 @@ export default function Page() {
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Kode</FormLabel>
-                    <Input placeholder="" value={code} onChange={e => setCode(e.target.value)} />
+                    <Input placeholder="" value={code} onChange={e => setCode(e.target.value)} disabled={isLoading} />
                     {errors != undefined && errors['code'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['code'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Nama *</FormLabel>
-                    <Input placeholder="" value={name} onChange={e => setName(e.target.value)} />
+                    <Input placeholder="" value={name} onChange={e => setName(e.target.value)} disabled={isLoading} />
                     {errors != undefined && errors['name'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['name'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
@@ -90,9 +90,9 @@ export default function Page() {
               <Box className="w-full flex justify-end">
                 <Button
                   size="large"
-                  endIcon={<NiFloppyDisk />}
+                  startIcon={<NiFloppyDisk />}
                   loading={isLoading}
-                  loadingPosition="end"
+                  loadingPosition="start"
                   variant="pastel"
                   color="primary"
                   onClick={() => save()}

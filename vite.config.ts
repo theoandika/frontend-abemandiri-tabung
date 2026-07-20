@@ -1,6 +1,5 @@
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from 'vite-plugin-pwa';
@@ -15,12 +14,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         navigateFallback: '/index.html',
-        // globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,webp}'],
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10 MB
+        // globPatterns: ['**/*.{js,css,html,ico,png,jpeg,jpg,svg,webp,pdf}'],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'image',
-
             handler: 'CacheFirst',
 
             options: {
@@ -30,8 +28,29 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
-          }
-        ]
+          },
+          {
+            urlPattern: ({ url }) => {
+              console.log('[SW]', url.href);
+
+              return (
+                url.origin === 'http://localhost:8000' &&
+                url.pathname.startsWith('/api/v1')
+              );
+            },
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-data-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Tabung Dunia Motor',
@@ -54,7 +73,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: false
+        enabled: true
       }
     }),
   ],

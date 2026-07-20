@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  Alert,
   Button,
+  Collapse,
   FilledInput,
   FormControl,
   Grid,
@@ -79,12 +81,18 @@ export default function Page() {
   const navigate = useNavigate()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
   const [deleteId, setDeleteId] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
   const getRows = () => {
+    setIsLoading(true)
     axios.post(ApiEndpoint.TUBE_CONTENT_INDEX)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
+    })
+    .finally(() => {
+      setIsLoading(false)
     })
   }
 
@@ -98,10 +106,16 @@ export default function Page() {
   }
 
   const deleteRow = () => {
+    setIsLoading(true)
     axios.delete(ApiEndpoint.TUBE_CONTENT_ALL + "/" + deleteId)
     .then (() => {
       getRows()
     })
+    .catch(err => {
+      let errData = err?.response?.data
+      setErrorMessage(errData?.message)
+    })
+    .finally(() => setIsLoading(false))
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -188,6 +202,16 @@ export default function Page() {
             </Grid>
           </Grid>
 
+          {errorMessage && (
+            <Grid size={12}>
+              <Collapse in={true}>
+                <Alert color="error" icon={<NiCrossSquare />} >
+                  {errorMessage}
+                </Alert>
+              </Collapse>
+            </Grid>
+          )}
+
           <Grid container spacing={5} className="w-full" size={12}>
             <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
               <InputLabel>Cari</InputLabel>
@@ -229,6 +253,7 @@ export default function Page() {
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
+          loading={isLoading}
           rows={rows}
           columns={columns}
           initialState={{

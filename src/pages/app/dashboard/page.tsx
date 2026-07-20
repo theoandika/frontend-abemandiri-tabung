@@ -7,7 +7,7 @@ export default function Page() {
       <Grid size={12} className="mb-2">
         <Grid size={{ xs: 12, md: "grow" }}>
           <Typography variant="h1" component="h1" className="mb-0">
-            Welcome Laura!
+            Selamat Datang!
           </Typography>
         </Grid>
       </Grid>

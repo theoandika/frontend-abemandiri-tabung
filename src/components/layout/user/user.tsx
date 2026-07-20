@@ -24,6 +24,8 @@ import Popper from "@mui/material/Popper";
 import NiSettings from "@/icons/nexture/ni-settings";
 import { cn } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user";
+import UserLeftMenuSwitch from "./user-left-menu-switch";
+import UserContentSwitch from "./user-content-switch";
 
 export default function User() {
   const [open, setOpen] = useState(false);
@@ -138,6 +140,8 @@ export default function User() {
 
                         <UserModeSwitch />
                         <UserThemeSwitch />
+                        <UserLeftMenuSwitch />
+                        <UserContentSwitch />
 
                       </MenuList>
                       <Box className="my-8"></Box>

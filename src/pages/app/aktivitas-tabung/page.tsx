@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  Alert,
   Button,
-  Collapse,
   FilledInput,
   FormControl,
   Grid,
@@ -13,51 +11,53 @@ import {
   Select,
   SelectProps,
   Tooltip,
-  Typography,
+  Typography
 } from "@mui/material";
 import {
   ColumnsPanelTrigger,
   DataGrid,
-  GridActionsCellItem,
   GridColDef,
-  GridRenderEditCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
   QuickFilterClear,
   QuickFilterControl,
-  Toolbar,
+  Toolbar
 } from "@mui/x-data-grid";
 
-import DataGridInput from "@/components/data-grid/data-grid-input";
-// import { DataGridPaginationFullPage } from "@/components/data-grid/data-grid-pagination";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
+import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
 import NiChevronLeftRightSmall from "@/icons/nexture/ni-chevron-left-right-small";
 import NiCols from "@/icons/nexture/ni-cols";
 import NiCross from "@/icons/nexture/ni-cross";
-import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import NiEllipsisVertical from "@/icons/nexture/ni-ellipsis-vertical";
 import NiEyeInactive from "@/icons/nexture/ni-eye-inactive";
 import NiFilter from "@/icons/nexture/ni-filter";
 import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
-import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
 import { cn } from "@/lib/utils";
-
 import ApiEndpoint from "@/api/api-endpoint"
-import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+import 'dayjs/locale/id'
 import axios from "@/api/axios";
-import DeleteConfirmation from "@/components/dialog/delete-confirmation";
-import NiPenSquare from "@/icons/nexture/ni-pen-square";
 
 interface Row {
-  id: string,
-  code: string,
-  name: string,
-  address: string
+  id: string
+  date: string
+  number: string
+  barcode: string
+  content: {
+    id: string
+    code: string
+    name: string
+  }
+  transaction_type: "in" | "out" | "return" | "sell" | "refill" | "filled" | "fixing" | "fixed"
+  tube_status: "filled" | "empty" | "broken" | "expired" | "display"
+  position: string
+  position_name: string
 };
 
 export default function Page() {
@@ -78,15 +78,11 @@ export default function Page() {
   }, []);
 
   const [rows, setRows] = useState<Row[]>([]);
-  const navigate = useNavigate()
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
-  const [deleteId, setDeleteId] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [errorMessage, setErrorMessage] = useState<string>("")
 
   const getRows = () => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.SITE_INDEX)
+    axios.get(ApiEndpoint.TUBE_ACTIVITY_REPORT)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
@@ -100,71 +96,139 @@ export default function Page() {
     getRows()
   }, [])
 
-  const doDelete = (id: string) => {
-    setDeleteId(id)
-    setDeleteDialogOpen(true)
-  }
-
-  const deleteRow = () => {
-    setIsLoading(true)
-    axios.delete(ApiEndpoint.SITE_ALL + "/" + deleteId)
-    .then (() => {
-      getRows()
-    })
-    .catch(err => {
-      let errData = err?.response?.data
-      setErrorMessage(errData?.message)
-    })
-    .finally(() => setIsLoading(false))
-  }
-
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
-      field: "code",
-      headerName: "Kode Cabang",
-      width: 200,
-      editable: true,
-      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
+      field: "date",
+      headerName: "Tanggal",
+      width: 150,
+      editable: false,
+      type: "dateTime",
+      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
     },
     {
-      field: "name",
-      headerName: "Nama Cabang",
-      width: 200,
-      editable: true,
-      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
+      field: "number",
+      headerName: "Nomor",
+      width: 100,
+      editable: false,
     },
     {
-      field: "address",
-      headerName: "Alamat",
-      minWidth: 200,
-      flex: 1,
-      editable: true,
-      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
+      field: "barcode",
+      headerName: "Barcode",
+      width: 100,
+      editable: false,
     },
     {
-      field: "actions",
-      headerName: "Aksi",
-      type: "actions",
-      minWidth: 80,
-      align: "right",
-      headerAlign: "right",
-      getActions: (params) => [
-        <GridActionsCellItem
-          key={0}
-          icon={<NiCrossSquare size="medium" />}
-          label="Hapus"
-          onClick={() => doDelete(params.row.id)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          key={1}
-          icon={<NiPenSquare size="medium" />}
-          label="Ubah"
-          onClick={() => navigate("/ubah-cabang/"+params.row.id)}
-          showInMenu
-        />,
+      field: "content",
+      headerName: "Isi",
+      editable: false,
+      width: 150,
+      valueGetter: (_, row) => `${row.content.code} - ${row.content.name}`,
+    },
+    {
+      field: "transaction_type",
+      headerName: "Aktivitas",
+      width: 100,
+      editable: false,
+      type: "singleSelect",
+      valueOptions: [
+        { value: "in", label: 'Masuk' },
+        { value: "out", label: 'Keluar' },
+        { value: "return", label: 'Retur' },
+        { value: "sell", label: 'Jual' },
+        { value: "refill", label: 'Isi Ulang' },
+        { value: "filled", label: 'Selesai Isi Ulang' },
+        { value: "fixing", label: 'Perbaikan' },
+        { value: "fixed", label: 'Selesai Perbaikan' },
       ],
+      valueFormatter: (value) => {
+        switch (value) {
+          case "in":
+            return "Masuk";
+          case "out":
+            return "Keluar";
+          case "return":
+            return "Retur";
+          case "sell":
+            return "Jual";
+          case "refill":
+            return "Isi Ulang";
+          case "filled":
+            return "Selesai Isi Ulang";
+          case "fixing":
+            return "Perbaikan";
+          case "fixed":
+            return "Selesai Perbaikan";
+          default:
+            return "";
+        }
+      },
+    },
+    {
+      field: "tube_status",
+      headerName: "Kondisi",
+      width: 100,
+      editable: false,
+      type: "singleSelect",
+      valueOptions: [
+        { value: "filled", label: 'Isi' },
+        { value: "empty", label: 'Kosong' },
+        { value: "broken", label: 'Rusak' },
+        { value: "expired", label: 'Afkir' },
+        { value: "display", label: 'Pajangan' },
+      ],
+      valueFormatter: (value) => {
+        switch (value) {
+          case "filled":
+            return "Isi";
+          case "empty":
+            return "Kosong";
+          case "broken":
+            return "Rusak";
+          case "expired":
+            return "Afkir";
+          case "display":
+            return "Pajangan";
+          default:
+            return "";
+        }
+      },
+    },
+    {
+      field: "position",
+      headerName: "Posisi",
+      width: 100,
+      editable: false,
+      type: "singleSelect",
+      valueOptions: [
+        { value: "site", label: 'Cabang' },
+        { value: "supplier", label: 'Supplier' },
+        { value: "member", label: 'Member' },
+        { value: "transit", label: 'Transit' },
+        { value: "unknown", label: 'Tidak diketahui' },
+      ],
+      valueFormatter: (value) => {
+        switch (value) {
+          case "site":
+            return "Cabang";
+          case "supplier":
+            return "Supplier";
+          case "member":
+            return "Member";
+          case "transit":
+            return "Transit";
+          case "unknown":
+            return "Tidak diketahui";
+          default:
+            return "";
+        }
+      },
+    },
+    {
+      field: "position_name",
+      headerName: "Nama Posisi",
+      editable: false,
+      width: 150,
     },
   ];
 
@@ -175,12 +239,12 @@ export default function Page() {
           <Grid container spacing={2.5} className="w-full" size={12}>
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">
-                Daftar Cabang
+                Aktivitas Tabung
               </Typography>
             </Grid>
 
             <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Pengaturan Kolom">
+              <Tooltip title="Columns">
                 <ColumnsPanelTrigger
                   render={(props) => (
                     <Button
@@ -196,28 +260,17 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Tambah Cabang">
+              <Tooltip title="Download Excel">
                 <Button
-                  className="icon-only surface-standard"
+                  className="icon-only surface-standard flex-none"
                   size="medium"
                   color="grey"
                   variant="surface"
-                  startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/tambah-cabang')}
+                  startIcon={<NiArrowInDown size={"medium"} />}
                 />
               </Tooltip>
             </Grid>
           </Grid>
-
-          {errorMessage && (
-            <Grid size={12}>
-              <Collapse in={true}>
-                <Alert color="error" icon={<NiCrossSquare />} >
-                  {errorMessage}
-                </Alert>
-              </Collapse>
-            </Grid>
-          )}
 
           <Grid container spacing={5} className="w-full" size={12}>
             <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
@@ -257,14 +310,13 @@ export default function Page() {
 
   return (
     <Grid container spacing={5}>
-      <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
           loading={isLoading}
           rows={rows}
           columns={columns}
           initialState={{
-            columns: { columnVisibilityModel: { id: false } },
+            columns: { columnVisibilityModel: { id: false } }
           }}
           getRowSpacing={getRowSpacing}
           rowHeight={68}

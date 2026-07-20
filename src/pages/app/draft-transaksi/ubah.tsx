@@ -49,21 +49,51 @@ import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/db";
+import NiArrowLeft from "@/icons/nexture/ni-arrow-left";
 
-export default function Page() {
+interface Data {
+  id: string;
+  date: string;
+  site: {
+    id: string
+    name: string
+  };
+  member: {
+    label: string;
+    value: string;
+  } | null;
+  transaction_type: string;
+  tube_status: string;
+  note: string;
+  nominal: string;
+  document?: File | null;
+  barcodes: {
+    id: string;
+    value: string;
+  }[];
+  created_at: string;
+  error: boolean;
+};
+
+interface Props {
+  data: Data,
+  onBack: () => void
+}
+
+export default function UpdateDraft({ data, onBack }: Props) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false)
-  const [site, setSite] = useState("")
+  const [site, setSite] = useState(data?.site?.id ?? "")
   const [siteOptions, setSiteOptions] = useState([])
-  const [member, setMember] = useState<{ label: string; value: string } | null>(null)
+  const [member, setMember] = useState<{ label: string; value: string } | null>(data.member ?? null)
   const [memberOptions, setMemberOptions] = useState<{ label: string; value: string }[]>([])
-  const [date, setDate] = useState<Dayjs>(dayjs())
-  const [transactionType, setTransactionType] = useState("")
-  const [tubeStatus, setTubeStatus] = useState("")
-  const [note, setNote] = useState("")
-  const [nominal, setNominal] = useState("")
-  const [document, setDocument] = useState<(any & { preview: string }[])>([]);
-  const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>([])
+  const [date, setDate] = useState<Dayjs>(dayjs(data.date))
+  const [transactionType, setTransactionType] = useState(data?.transaction_type ?? "")
+  const [tubeStatus, setTubeStatus] = useState(data?.tube_status ?? "")
+  const [note, setNote] = useState(data?.note ?? "")
+  const [nominal, setNominal] = useState(data?.nominal ?? "")
+  const [document, setDocument] = useState<(any & { preview: string }[])>(data?.document ? [data?.document] : []);
+  const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>(data?.barcodes ?? [])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string>("");
   const [scanPaused, setScanPaused] = useState(true)
@@ -184,9 +214,8 @@ export default function Page() {
     })
   }
 
-  const saveLocal = async () => {
-    db.memberTransactions.add({
-      id: crypto.randomUUID(),
+  const updateLocal = async (id: string) => {
+    db.memberTransactions.update(id, {
       date: date.toISOString(),
       site: siteOptions.filter((item: any) => item?.id == site)[0],
       member: member ?? null,
@@ -195,8 +224,7 @@ export default function Page() {
       note: note,
       nominal: nominal,
       document: document[0],
-      barcodes: barcodes,
-      created_at: dayjs().toISOString()
+      barcodes: barcodes
     })
     .then(() => {
       setErrorMessage(`Anda sedang offline. Data disimpan ke draft`)
@@ -208,28 +236,31 @@ export default function Page() {
 
   const save = () => {
     setIsLoading(true)
-    const data = new FormData();
-    data.append('site', site);
-    data.append('member', member?.value ?? "")
-    data.append('date', date.format("YYYY-MM-DD hh:mm"))
-    data.append('transaction_type', transactionType)
-    data.append('tube_status', tubeStatus)
-    data.append('note', note)
-    data.append('nominal', nominal)
+    const formData = new FormData();
+    formData.append('site', site);
+    formData.append('member', member?.value ?? "")
+    formData.append('date', date.format("YYYY-MM-DD hh:mm"))
+    formData.append('transaction_type', transactionType)
+    formData.append('tube_status', tubeStatus)
+    formData.append('note', note)
+    formData.append('nominal', nominal)
     if (document.length) {
-      data.append('document', document[0])
+      formData.append('document', document[0])
     }
     barcodes.map((item) => {
-      data.append('barcodes[]', item.value)
+      formData.append('barcodes[]', item.value)
     })
 
-    axios.post(ApiEndpoint.CREATE_MEMBER_TRANSACTION, data)
+    axios.post(ApiEndpoint.CREATE_MEMBER_TRANSACTION, formData)
     .then(() => {
-      navigate('/transaksi-member')
+      db.memberTransactions.delete(data.id)
+      .then(() => {
+        navigate('/transaksi-member')
+      })
     })
     .catch((err) => {
       if (err.message === 'Network Error' || !err.response && err === undefined) {
-        saveLocal()
+        updateLocal(data.id)
       } else {
         let errData = err?.response?.data
         setErrors(errData?.errors);
@@ -276,9 +307,21 @@ export default function Page() {
     <Grid container spacing={5} className="w-full" size={12}>
       <Grid size={12} container spacing={2.5}>
         <Grid size={{ xs: 12, md: "grow" }}>
-          <Typography variant="h1" component="h1" className="mb-0">
-            Transaksi Baru
-          </Typography>
+          <Box className="flex items-center gap-5">
+            <Tooltip title="Kembali">
+              <Button
+                className="icon-only surface-standard flex-none"
+                size="medium"
+                color="grey"
+                variant="surface"
+                startIcon={<NiArrowLeft size={"medium"} />}
+                onClick={() => onBack()}
+              />
+            </Tooltip>
+            <Typography variant="h1" component="h1" className="mb-0">
+              Ubah dan Simpan Draft
+            </Typography>
+          </Box>
         </Grid>
       </Grid>
 

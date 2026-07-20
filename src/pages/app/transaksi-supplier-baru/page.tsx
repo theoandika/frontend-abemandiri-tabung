@@ -36,7 +36,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import axios from "@/api/axios";
-import { useDropzone } from "react-dropzone";
 
 import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
@@ -45,24 +44,21 @@ import NiCalendar from "@/icons/nexture/ni-calendar";
 import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NiCamera from "@/icons/nexture/ni-camera";
-import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useNavigate } from "react-router-dom";
-import { db } from "@/db";
 
 export default function Page() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false)
   const [site, setSite] = useState("")
   const [siteOptions, setSiteOptions] = useState([])
-  const [member, setMember] = useState<{ label: string; value: string } | null>(null)
-  const [memberOptions, setMemberOptions] = useState<{ label: string; value: string }[]>([])
+  const [supplier, setSupplier] = useState<{ label: string; value: string } | null>(null)
+  const [supplierOptions, setSupplierOptions] = useState<{ label: string; value: string }[]>([])
   const [date, setDate] = useState<Dayjs>(dayjs())
   const [transactionType, setTransactionType] = useState("")
   const [tubeStatus, setTubeStatus] = useState("")
+  const [isTubeStatusDisabled, setIsTubaStatusDisabled] = useState(false)
   const [note, setNote] = useState("")
-  const [nominal, setNominal] = useState("")
-  const [document, setDocument] = useState<(any & { preview: string }[])>([]);
   const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>([])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string>("");
@@ -75,66 +71,6 @@ export default function Page() {
 
   const theme = useTheme();
   const fullScreenResponsive = useMediaQuery(theme.breakpoints.down("md"));
-
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      "application/pdf": [],
-    },
-    onDrop: (acceptedFiles) => {
-      const newFiles: any[] = [];
-      acceptedFiles.map((file) => {
-        const newFile = Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        });
-        newFiles.push(newFile);
-      });
-      setDocument(newFiles);
-    },
-  });
-
-  const handleRemoveImage = () => {
-    setDocument([]);
-  };
-
-  const thumbs = document.map((file: any) => (
-    <Box
-      key={file.name}
-      className="bg-grey-25 flex-non flex w-full cursor-default flex-row items-start rounded-sm p-1"
-      onClick={(event) => {
-        event.stopPropagation();
-      }}
-    >
-      <img
-        alt={file.name}
-        src={file.preview}
-        className="h-12 w-16 rounded-xs object-cover"
-        onLoad={() => {
-          URL.revokeObjectURL(file.preview);
-        }}
-      />
-      <Box className="flex flex-1 flex-row items-center justify-between gap-1 px-3 py-2">
-        <Box className="flex flex-col">
-          <Typography variant="body1" component="p" className="line-clamp-1 leading-3.5">
-            {file.name}
-          </Typography>
-          <Typography variant="body2" component="p" className="text-text-secondary">
-            {Math.round(file.size / 1000)} KB
-          </Typography>
-        </Box>
-        <Button
-          onClick={(event) => {
-            event.stopPropagation();
-            handleRemoveImage();
-          }}
-          className="icon-only hover:text-primary! flex-none"
-          size="tiny"
-          color="grey"
-          variant="pastel"
-          startIcon={<NiBinEmpty size={"tiny"} />}
-        />
-      </Box>
-    </Box>
-  ));
 
   const checkBarcodeExists = (barcode: string) => {
     return barcodes.findIndex(item => item.value === barcode) === -1 ? false : true
@@ -167,42 +103,20 @@ export default function Page() {
       setIsLoading(false)
     })
   }
-  const getMemberOptions = () => {
-    setMemberOptions([])
+  const getSupplierOptions = () => {
+    setSupplierOptions([])
     setIsLoading(true)
-    axios.get(ApiEndpoint.MEMBER_ALL)
+    axios.get(ApiEndpoint.SUPPLIER)
     .then((res) => {
       const options = res.data.data.map((member: any) => ({
         label: `${member.code} - ${member.name}`,
         value: member.id,
       }));
 
-      setMemberOptions(options);
+      setSupplierOptions(options);
     })
     .finally(() => {
       setIsLoading(false)
-    })
-  }
-
-  const saveLocal = async () => {
-    db.memberTransactions.add({
-      id: crypto.randomUUID(),
-      date: date.toISOString(),
-      site: siteOptions.filter((item: any) => item?.id == site)[0],
-      member: member ?? null,
-      transaction_type: transactionType,
-      tube_status: tubeStatus,
-      note: note,
-      nominal: nominal,
-      document: document[0],
-      barcodes: barcodes,
-      created_at: dayjs().toISOString()
-    })
-    .then(() => {
-      setErrorMessage(`Anda sedang offline. Data disimpan ke draft`)
-    })
-    .catch(error => {
-      setErrorMessage(`Gagal menyimpan data ke draft: ${error}`)
     })
   }
 
@@ -210,32 +124,24 @@ export default function Page() {
     setIsLoading(true)
     const data = new FormData();
     data.append('site', site);
-    data.append('member', member?.value ?? "")
+    data.append('supplier', supplier?.value ?? "")
     data.append('date', date.format("YYYY-MM-DD hh:mm"))
     data.append('transaction_type', transactionType)
     data.append('tube_status', tubeStatus)
     data.append('note', note)
-    data.append('nominal', nominal)
-    if (document.length) {
-      data.append('document', document[0])
-    }
     barcodes.map((item) => {
       data.append('barcodes[]', item.value)
     })
 
-    axios.post(ApiEndpoint.CREATE_MEMBER_TRANSACTION, data)
+    axios.post(ApiEndpoint.SUPPLIER_TRANSACTION, data)
     .then(() => {
-      navigate('/transaksi-member')
+      navigate('/transaksi-supplier')
     })
     .catch((err) => {
-      if (err.message === 'Network Error' || !err.response && err === undefined) {
-        saveLocal()
-      } else {
-        let errData = err?.response?.data
-        setErrors(errData?.errors);
-        setErrorMessage(errData?.message);
-        errData?.data && setErrorBarcodes(errData.data)
-      }
+      let errData = err?.response?.data
+      setErrors(errData?.errors);
+      setErrorMessage(errData?.message);
+      errData?.data && setErrorBarcodes(errData.data)
     })
     .finally(() => {
       setIsLoading(false)
@@ -244,8 +150,24 @@ export default function Page() {
 
   useEffect(() => {
     getSiteOptions()
-    getMemberOptions()
+    getSupplierOptions()
   }, [])
+
+  useEffect(() => {
+    if (transactionType == 'refill') {
+      setTubeStatus("empty")
+      setIsTubaStatusDisabled(true)
+    } else if (transactionType == 'filled') {
+      setTubeStatus("filled")
+      setIsTubaStatusDisabled(true)
+    } else if (transactionType == 'fixing') {
+      setTubeStatus("broken")
+      setIsTubaStatusDisabled(true)
+    } else {
+      setTubeStatus("")
+      setIsTubaStatusDisabled(false)
+    }
+  }, [transactionType])
 
   const deleteBarcode = (id: string) => {
     setBarcodes([...barcodes.filter((item) => item.id !== id)])
@@ -352,15 +274,15 @@ export default function Page() {
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth>
-                    <FormLabel component="label">Member</FormLabel>
+                    <FormLabel component="label">Supplier *</FormLabel>
                     <Autocomplete
                       size="small"
                       popupIcon={<NiChevronDownSmall />}
                       clearIcon={<NiCross />}
-                      value={member}
-                      options={memberOptions}
+                      value={supplier}
+                      options={supplierOptions}
                       getOptionKey={(option) => option.value}
-                      onChange={(_, val) => setMember(val ?? null)}
+                      onChange={(_, val) => setSupplier(val ?? null)}
                       renderInput={(params) => (
                         <TextField {...params} variant="standard" className="outlined" placeholder="" />
                       )}
@@ -373,12 +295,12 @@ export default function Page() {
                       }}
                       disabled={isLoading}
                     />
-                    {errors != undefined && errors['member'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['member'][0]}</FormLabel>}
+                    {errors != undefined && errors['supplier'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['supplier'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl>
-                    <FormLabel>Masuk/Keluar *</FormLabel>
+                    <FormLabel>Isi Ulang/Perbaikan *</FormLabel>
                     <RadioGroup
                       name="controlled-radio-buttons-group"
                       value={transactionType}
@@ -386,27 +308,27 @@ export default function Page() {
                       className="mb-0 flex flex-row gap-4"
                     >
                       <FormControlLabel
-                        value="in"
+                        value="refill"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
-                        label="Masuk"
+                        label="Isi Ulang"
                         disabled={isLoading}
                       />
                       <FormControlLabel
-                        value="out"
+                        value="filled"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
-                        label="Keluar"
+                        label="Selesai Isi Ulang"
                         disabled={isLoading}
                       />
                       <FormControlLabel
-                        value="return"
+                        value="fixing"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
-                        label="Retur"
+                        label="Perbaikan"
                         disabled={isLoading}
                       />
                       <FormControlLabel
-                        value="sell"
+                        value="fixed"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
-                        label="Jual"
+                        label="Selesai Perbaikan"
                         disabled={isLoading}
                       />
                     </RadioGroup>
@@ -426,31 +348,19 @@ export default function Page() {
                         value="filled"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Isi"
-                        disabled={isLoading}
+                        disabled={isLoading || isTubeStatusDisabled}
                       />
                       <FormControlLabel
                         value="empty"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Kosong"
-                        disabled={isLoading}
+                        disabled={isLoading || isTubeStatusDisabled}
                       />
                       <FormControlLabel
                         value="broken"
                         control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
                         label="Rusak"
-                        disabled={isLoading}
-                      />
-                      <FormControlLabel
-                        value="expired"
-                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
-                        label="Afkir"
-                        disabled={isLoading}
-                      />
-                      <FormControlLabel
-                        value="display"
-                        control={<Radio icon={<RadiobuttonSmallEmptyOutlined />} checkedIcon={<RadiobuttonSmallChecked />} />}
-                        label="Display"
-                        disabled={isLoading}
+                        disabled={isLoading || isTubeStatusDisabled}
                       />
                     </RadioGroup>
                     {errors != undefined && errors['tube_status'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['tube_status'][0]}</FormLabel>}
@@ -461,32 +371,6 @@ export default function Page() {
                     <FormLabel component="label">Catatan</FormLabel>
                     <Input value={note} placeholder="" onChange={(e: any) => setNote(e.target.value)} disabled={isLoading} />
                     {errors != undefined && errors['note'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['note'][0]}</FormLabel>}
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl className="outlined" variant="standard" size="small" fullWidth>
-                    <FormLabel component="label">Jaminan Nominal</FormLabel>
-                    <Input type="number" value={nominal} placeholder="" onChange={(e: any) => setNominal(e.target.value)} disabled={isLoading} />
-                    {errors != undefined && errors['nominal'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['nominal'][0]}</FormLabel>}
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl className="outlined" variant="standard" size="small" fullWidth>
-                    <FormLabel component="label">Jaminan Dokumen</FormLabel>
-                    <Box
-                      {...getRootProps({ className: "dropzone" })}
-                      className="border-grey-200 hover:border-grey-500 flex min-h-22.5 flex-row flex-wrap gap-2.5 rounded-md border p-4 transition-all"
-                    >
-                      <input {...getInputProps()} disabled={isLoading} />
-                      {document.length > 0 ? (
-                        thumbs
-                      ) : (
-                        <Typography variant="body1" className="pointer-events-none w-full self-center text-center">
-                          Pilih dokumen (.pdf)
-                        </Typography>
-                      )}
-                    </Box>
-                    {errors != undefined && errors['document'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['document'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
               </Grid>

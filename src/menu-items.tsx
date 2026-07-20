@@ -119,7 +119,7 @@ export const leftMenuItems: MenuItem[] = [
       },
       {
         id: "change-tube-barcode",
-        icon: "NiPenSquare",
+        icon: "NiBarcode",
         label: "Ubah Barcode",
         color: "text-primary",
         href: "/ubah-barcode",
@@ -138,6 +138,13 @@ export const leftMenuItems: MenuItem[] = [
         label: "Daftar Transaksi",
         color: "text-primary",
         href: "/transaksi-member",
+      },
+      {
+        id: "transaction-draft-list",
+        icon: "NiPullRequestDraft",
+        label: "Draft",
+        color: "text-primary",
+        href: "/draft-transaksi",
       },
       {
         id: "add-transaction",
@@ -168,6 +175,21 @@ export const leftMenuItems: MenuItem[] = [
         color: "text-primary",
         href: "/transaksi-supplier-baru",
       }
+    ]
+  },
+  {
+    id: "reports",
+    icon: "NiDocumentArchive",
+    label: "Laporan",
+    color: "text-primary",
+    children: [
+      {
+        id: "tube-activity",
+        icon: "NiDocumentFull",
+        label: "Aktivitas Tabung",
+        color: "text-primary",
+        href: "/aktivitas-tabung",
+      },
     ]
   },
 ];

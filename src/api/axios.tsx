@@ -1,8 +1,7 @@
 import axios from "axios";
 import { LOCAL_STORAGE_KEYS as LS_KEYS } from "@/constants";
 
-export const baseUrl = 'http://localhost:8000/api/v1';
-// export const baseUrl = 'https://api-hrd.abemandiri.co.id/api/v1';
+export const baseUrl = "http://localhost:8000/api/v1"
 
 axios.interceptors.request.use(
   function (config) {

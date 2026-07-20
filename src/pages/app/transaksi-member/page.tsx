@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  Box,
+  Alert,
   Button,
+  Collapse,
   FilledInput,
   FormControl,
   Grid,
@@ -12,25 +13,21 @@ import {
   Select,
   SelectProps,
   Tooltip,
-  Typography,
+  Typography
 } from "@mui/material";
 import {
   ColumnsPanelTrigger,
   DataGrid,
   GridActionsCellItem,
   GridColDef,
-  GridRenderCellParams,
-  GridRowId,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
   QuickFilterClear,
   QuickFilterControl,
-  Toolbar,
+  Toolbar
 } from "@mui/x-data-grid";
 
-// import DataGridInput from "@/components/data-grid/data-grid-input";
-// import { DataGridPaginationFullPage } from "@/components/data-grid/data-grid-pagination";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
 import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
@@ -46,13 +43,15 @@ import NiFilter from "@/icons/nexture/ni-filter";
 import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
 import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
-import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import { cn } from "@/lib/utils";
-import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import 'dayjs/locale/id'
+import axios from "@/api/axios";
+import DeleteConfirmation from "@/components/dialog/delete-confirmation";
+import NiEyeOpen from "@/icons/nexture/ni-eye-open";
+import DetailMemberTransaction from "./detail";
 
 interface Row {
   id: string
@@ -68,9 +67,20 @@ interface Row {
   date: string
   transaction_type: "in" | "out" | "return" | "sell"
   tube_status: "filled" | "empty" | "broken" | "expired" | "display"
+  note: string
   nominal?: number
   document?: string
-  item_count: number
+  items: {
+    id: string
+    number: string
+    barcode: string
+    tube_content_type: {
+      id: string
+      code: string
+      name: string
+    }
+    tube_owner: "DM" | "Non DM"
+  }[],
 };
 
 export default function Page() {
@@ -92,12 +102,22 @@ export default function Page() {
 
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
+  const [deleteId, setDeleteId] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
+  const [openDetail, setOpenDetail] = useState<boolean>(false)
+  const [activeData, setActiveData] = useState<Row | null>(null)
 
   const getRows = () => {
-    Axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX)
+    setIsLoading(true)
+    axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
+    })
+    .finally(() => {
+      setIsLoading(false)
     })
   }
 
@@ -105,23 +125,43 @@ export default function Page() {
     getRows()
   }, [])
 
-  const deleteTube = useCallback(
-    (id: GridRowId) => () => {
-      setTimeout(() => {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
-      });
-    },
-    [],
-  );
+  const doDelete = (id: string) => {
+    setDeleteId(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const deleteRow = () => {
+    setIsLoading(true)
+    axios.delete(ApiEndpoint.CREATE_MEMBER_TRANSACTION + "/" + deleteId)
+    .then (() => {
+      getRows()
+    })
+    .catch(err => {
+      let errData = err?.response?.data
+      setErrorMessage(errData?.message)
+    })
+    .finally(() => setIsLoading(false))
+  }
+
+  const doOpenDetail = (data: Row) => {
+    setActiveData(data)
+    setOpenDetail(true)
+  }
+
+  const doBack = () => {
+    setActiveData(null)
+    setOpenDetail(false)
+  }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
       field: "date",
       headerName: "Tanggal",
-      width: 150,
+      width: 180,
       editable: false,
-      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY H:mm")
+      type: "dateTime",
+      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
     },
     {
       field: "site",
@@ -133,7 +173,7 @@ export default function Page() {
     {
       field: "member",
       headerName: "Member",
-      width: 150,
+      width: 200,
       editable: false,
       valueGetter: (_, row) => row.member ? `${row.member?.code} - ${row.member?.name}` : '',
     },
@@ -195,8 +235,16 @@ export default function Page() {
       },
     },
     {
+      field: "items",
+      headerName: "Tabung",
+      editable: false,
+      width: 80,
+      type: "number",
+      valueGetter: (_, row) => row.items.length,
+    },
+    {
       field: "actions",
-      headerName: "Actions",
+      headerName: "Aksi",
       type: "actions",
       minWidth: 80,
       flex: 1,
@@ -205,14 +253,23 @@ export default function Page() {
       getActions: (params) => [
         <GridActionsCellItem
           key={0}
+          icon={<NiEyeOpen size="medium" />}
+          label="Detail"
+          onClick={() => doOpenDetail(params.row)}
+          showInMenu
+        />,
+        <GridActionsCellItem
+          key={0}
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
-          onClick={deleteTube(params.id)}
+          onClick={() => doDelete(params.row.id)}
           showInMenu
         />,
       ],
     },
   ];
+
+  if (openDetail && activeData) return <DetailMemberTransaction data={activeData} onBack={doBack} />
 
   function CustomToolbar() {
     return (
@@ -252,7 +309,7 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Tambah Tabung">
+              <Tooltip title="Transaksi Baru">
                 <Button
                   className="icon-only surface-standard"
                   size="medium"
@@ -264,6 +321,16 @@ export default function Page() {
               </Tooltip>
             </Grid>
           </Grid>
+
+          {errorMessage && (
+            <Grid size={12}>
+              <Collapse in={true}>
+                <Alert color="error" icon={<NiCrossSquare />} >
+                  {errorMessage}
+                </Alert>
+              </Collapse>
+            </Grid>
+          )}
 
           <Grid container spacing={5} className="w-full" size={12}>
             <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
@@ -303,12 +370,14 @@ export default function Page() {
 
   return (
     <Grid container spacing={5}>
+      <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
+          loading={isLoading}
           rows={rows}
           columns={columns}
           initialState={{
-            columns: { columnVisibilityModel: { id: false } },
+            columns: { columnVisibilityModel: { id: false } }
           }}
           getRowSpacing={getRowSpacing}
           rowHeight={68}
