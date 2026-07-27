@@ -9,6 +9,7 @@ import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NextureIcons from "@/icons/nexture-icons";
 import { cn, isPathMatch } from "@/lib/utils";
 import { MenuItem } from "@/types/types";
+import { useUserContext } from "@/hooks/use-user";
 
 type Props = {
   item: MenuItem;
@@ -22,6 +23,7 @@ type Props = {
 export function SecondaryItem({ item, indent = 0, openedAccordions, setOpenedAccordions, className, onSelect }: Props) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+    const { checkPermission } = useUserContext()
 
   const isActive = useMemo(() => {
     if (item.href && isPathMatch(pathname, item.href)) return true;
@@ -113,7 +115,7 @@ export function SecondaryItem({ item, indent = 0, openedAccordions, setOpenedAcc
   }
 
   // the item is a link without children
-  if ((!item.children || item.children.filter((x) => !x.hideInMenu).length === 0) && item.href) {
+  if ((!item.children || item.children.filter((x) => !x.hideInMenu && checkPermission(x.canAccess, x?.permissions)).length === 0) && item.href) {
     return (
       <Button
         variant="text"
@@ -180,7 +182,7 @@ export function SecondaryItem({ item, indent = 0, openedAccordions, setOpenedAcc
       </AccordionSummary>
       <AccordionDetails className="ms-7 flex flex-col gap-1 pt-2">
         {item.children
-          ?.filter((x) => !x.hideInMenu)
+          ?.filter((x) => !x.hideInMenu && checkPermission(x.canAccess, x?.permissions))
           .map((child) => (
             <SecondaryItem
               onSelect={onSelect}

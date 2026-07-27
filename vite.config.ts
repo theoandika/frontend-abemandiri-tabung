@@ -31,8 +31,6 @@ export default defineConfig({
           },
           {
             urlPattern: ({ url }) => {
-              console.log('[SW]', url.href);
-
               return (
                 url.origin === 'http://localhost:8000' &&
                 url.pathname.startsWith('/api/v1')

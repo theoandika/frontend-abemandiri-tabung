@@ -64,13 +64,13 @@ export default function Page() {
   const checkLogged = () => {
     axios.get(ApiEndpoint.ACCOUNT)
     .then((res2) => {
-      setUser(res2?.data?.data)
+      setUser(res2?.data?.data)      
       navigate('/dashboard')
     })
     .catch(() => {
       setIsLoadingPage(false)
     })
-  } 
+  }
 
   const submit = () => {
     setIsLoading(true)    

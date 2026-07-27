@@ -40,6 +40,10 @@ const ApiEndpoint = {
 
     // report
     TUBE_ACTIVITY_REPORT: 'reports/tube-activities',
+
+    // stock opname
+    STOCK_OPNAME: 'stock-opnames',
+    STOCK_OPNAME_INDEX: 'stock-opnames/index'
 }
 
 export default ApiEndpoint

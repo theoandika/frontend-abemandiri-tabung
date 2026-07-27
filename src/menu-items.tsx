@@ -36,6 +36,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiUsers",
     label: "Supplier",
     color: "text-primary",
+    permissions: ["view-supplier","create-supplier"],
     children: [
       {
         id: "supplier-list",
@@ -43,6 +44,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Daftar Supplier",
         color: "text-primary",
         href: "/supplier",
+        permissions: ["view-supplier"]
       },
       {
         id: "add-supplier",
@@ -50,6 +52,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Tambah Supplier",
         color: "text-primary",
         href: "/tambah-supplier",
+        permissions: ["create-supplier"]
       }
     ]
   },
@@ -58,6 +61,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiUsers",
     label: "Member",
     color: "text-primary",
+    permissions: ["view-member","create-member"],
     children: [
       {
         id: "member-list",
@@ -65,6 +69,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Daftar Member",
         color: "text-primary",
         href: "/member",
+        permissions: ["view-member"],
       },
       {
         id: "add-member",
@@ -72,6 +77,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Tambah Member",
         color: "text-primary",
         href: "/tambah-member",
+        permissions: ["create-member"],
       }
     ]
   },
@@ -80,6 +86,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiSparkle",
     label: "Jenis Isi Tabung",
     color: "text-primary",
+    permissions: ["view-supplier","create-supplier"],
     children: [
       {
         id: "tube-content-list",
@@ -178,6 +185,28 @@ export const leftMenuItems: MenuItem[] = [
     ]
   },
   {
+    id: "stock-opname",
+    icon: "NiDocumentCheck",
+    label: "Stock Opname",
+    color: "text-primary",
+    children: [
+      {
+        id: "stock-opname-list",
+        icon: "NiList",
+        label: "Riwayat",
+        color: "text-primary",
+        href: "/stock-opname",
+      },
+      {
+        id: "add-stock-opname",
+        icon: "NiPlusSquare",
+        label: "Submit",
+        color: "text-primary",
+        href: "/submit-stock-opname",
+      }
+    ]
+  },
+  {
     id: "reports",
     icon: "NiDocumentArchive",
     label: "Laporan",
@@ -198,85 +227,48 @@ export const leftMenuBottomItems: MenuItem[] = [
   {
     id: "role",
     label: "Role",
-    href: "/docs",
+    href: "/role",
     icon: "NiUserCheck",
     color: "text-primary",
+    canAccess: [Viewer.ADMINISTRATOR],
     children: [
       {
         id: "role-list",
-        label: "menu-welcome",
-        href: "/docs/welcome",
-        hideInMenu: true,
-        children: [
-          {
-            id: "docs-introduction",
-            label: "docs-introduction",
-            href: "/docs/welcome/introduction",
-          },
-          {
-            id: "docs-faq",
-            label: "docs-faq",
-            href: "/docs/welcome/faq",
-          },
-          {
-            id: "docs-changelog",
-            label: "docs-changelog",
-            href: "/docs/welcome/changelog",
-          },
-        ],
+        icon: "NiList",
+        label: "Riwayat",
+        color: "text-primary",
+        href: "/role",
       },
       {
-        id: "docs-getting-started",
-        label: "docs-getting-started",
-        href: "/docs/getting-started",
-        hideInMenu: true,
-        children: [
-          {
-            id: "docs-installation",
-            label: "docs-installation",
-            href: "/docs/getting-started/installation",
-          },
-          {
-            id: "docs-file-structure",
-            label: "docs-file-structure",
-            href: "/docs/getting-started/file-structure",
-          },
-          {
-            id: "docs-routing-and-menu",
-            label: "docs-routing-and-menu",
-            href: "/docs/getting-started/routing-and-menu",
-          },
-          {
-            id: "docs-multi-language",
-            label: "docs-multi-language",
-            href: "/docs/getting-started/multi-language",
-          },
-        ],
-      },
-      {
-        id: "docs-theme",
-        label: "menu-theme",
-        href: "/docs/theme",
-        hideInMenu: true,
-        children: [
-          {
-            id: "docs-settings",
-            label: "docs-settings",
-            href: "/docs/theme/settings",
-          },
-          {
-            id: "docs-theme-provider",
-            label: "docs-theme-provider",
-            href: "/docs/theme/theme-provider",
-          },
-          {
-            id: "docs-styling",
-            label: "docs-styling",
-            href: "/docs/theme/styling",
-          },
-        ],
-      },
-    ],
+        id: "add-role",
+        icon: "NiPlusSquare",
+        label: "Submit",
+        color: "text-primary",
+        href: "/tambah-role",
+      }
+    ]
   },
-  { id: "users", label: "User", href: "/settings", icon: "NiUser" },
+  {
+    id: "users",
+    label: "User",
+    href: "/settings",
+    icon: "NiUser",
+    canAccess: [Viewer.ADMINISTRATOR],
+    children: [
+      {
+        id: "user-list",
+        icon: "NiList",
+        label: "Riwayat",
+        color: "text-primary",
+        href: "/user",
+      },
+      {
+        id: "add-user",
+        icon: "NiPlusSquare",
+        label: "Submit",
+        color: "text-primary",
+        href: "/tambah-user",
+      }
+    ]
+  },
 ];

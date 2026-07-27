@@ -1,6 +1,6 @@
 import UserModeSwitch from "./user-mode-switch";
 import UserThemeSwitch from "./user-theme-switch";
-import { SyntheticEvent, useRef, useState } from "react";
+import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Axios from "@/api/axios"
 import ApiEndpoint from "@/api/api-endpoint";
@@ -26,11 +26,12 @@ import { cn } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user";
 import UserLeftMenuSwitch from "./user-left-menu-switch";
 import UserContentSwitch from "./user-content-switch";
+import axios from "@/api/axios";
 
 export default function User() {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
-  const { user, clearAuth } = useUserContext();
+  const { user, setUser, clearAuth } = useUserContext();
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -52,6 +53,18 @@ export default function User() {
       navigate('/')
     })
   }
+
+  const getUser = () => {
+    axios.get(ApiEndpoint.ACCOUNT)
+    .then((res2) => {
+      setUser(res2?.data?.data)      
+      navigate('/dashboard')
+    })
+  }
+
+  useEffect(() => {
+    getUser()
+  }, [])
 
   return (
     <>

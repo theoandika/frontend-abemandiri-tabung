@@ -20,7 +20,6 @@ import {
   DataGrid,
   GridActionsCellItem,
   GridColDef,
-  GridRenderEditCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
@@ -29,8 +28,6 @@ import {
   Toolbar,
 } from "@mui/x-data-grid";
 
-import DataGridInput from "@/components/data-grid/data-grid-input";
-// import { DataGridPaginationFullPage } from "@/components/data-grid/data-grid-pagination";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
@@ -124,16 +121,14 @@ export default function Page() {
       field: "code",
       headerName: "Kode",
       width: 200,
-      editable: true,
-      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
+      editable: false,
     },
     {
       field: "name",
       headerName: "Nama",
       width: 200,
-      editable: true,
+      editable: false,
       flex: 1,
-      renderEditCell: (params: GridRenderEditCellParams) => <DataGridInput {...params} />,
     },
     {
       field: "actions",

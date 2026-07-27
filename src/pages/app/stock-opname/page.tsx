@@ -48,13 +48,17 @@ import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
-import NiPenSquare from "@/icons/nexture/ni-pen-square";
+import dayjs from "dayjs";
 
 interface Row {
-  id: string,
-  code: string,
-  name: string,
-  address: string
+  id: string
+  date: string
+  site: {
+    id: string
+    name: string
+  },
+  tube_count: number
+  not_match_count: number
 };
 
 export default function Page() {
@@ -83,7 +87,7 @@ export default function Page() {
 
   const getRows = () => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.MEMBER_INDEX)
+    axios.get(ApiEndpoint.STOCK_OPNAME_INDEX)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
@@ -104,7 +108,7 @@ export default function Page() {
 
   const deleteRow = () => {
     setIsLoading(true)
-    axios.delete(ApiEndpoint.MEMBER_ALL + "/" + deleteId)
+    axios.delete(ApiEndpoint.STOCK_OPNAME + "/" + deleteId)
     .then (() => {
       getRows()
     })
@@ -118,36 +122,40 @@ export default function Page() {
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
-      field: "code",
-      headerName: "Kode Member",
+      field: "date",
+      headerName: "Kode Cabang",
       width: 200,
       editable: false,
+      type: "dateTime",
+      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
     },
     {
-      field: "name",
-      headerName: "Nama Member",
+      field: "site",
+      headerName: "Cabang",
       width: 200,
       editable: false,
+      valueGetter: (_, row) => row.site.name,
     },
     {
-      field: "address",
-      headerName: "Alamat",
-      minWidth: 200,
-      flex: 1,
+      field: "tube_count",
+      headerName: "Jumlah Tabung",
+      width: 150,
       editable: false,
+      type: "number",
     },
     {
-      field: "phone_number",
-      headerName: "Telp",
-      minWidth: 200,
-      flex: 1,
+      field: "not_match_count",
+      headerName: "Tidak Sesuai",
+      width: 100,
       editable: false,
+      type: "number",
     },
     {
       field: "actions",
       headerName: "Aksi",
       type: "actions",
       minWidth: 80,
+      flex: 1,
       align: "right",
       headerAlign: "right",
       getActions: (params) => [
@@ -156,13 +164,6 @@ export default function Page() {
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
           onClick={() => doDelete(params.row.id)}
-          showInMenu
-        />,
-        <GridActionsCellItem
-          key={1}
-          icon={<NiPenSquare size="medium" />}
-          label="Ubah"
-          onClick={() => navigate("/ubah-member/"+params.row.id)}
           showInMenu
         />,
       ],
@@ -176,7 +177,7 @@ export default function Page() {
           <Grid container spacing={2.5} className="w-full" size={12}>
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">
-                Daftar Member
+                Stock Opname
               </Typography>
             </Grid>
 
@@ -197,14 +198,14 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Tambah Member">
+              <Tooltip title="Submit Stok Opname">
                 <Button
                   className="icon-only surface-standard"
                   size="medium"
                   color="grey"
                   variant="surface"
                   startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/tambah-member')}
+                  onClick={() => navigate('/submit-stock-opname')}
                 />
               </Tooltip>
             </Grid>

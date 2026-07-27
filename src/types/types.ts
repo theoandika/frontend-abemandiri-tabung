@@ -29,7 +29,7 @@ export type MenuItem = {
   isExternalLink?: boolean;
   content?: React.ReactNode;
   hideInMenu?: boolean;
-  permission?: string
+  permissions?: string[]
 };
 
 export enum ContentType {

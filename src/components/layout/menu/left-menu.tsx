@@ -12,6 +12,7 @@ import { DEFAULTS } from "@/config";
 import { cn, isPathMatch } from "@/lib/utils";
 import { leftMenuBottomItems, leftMenuItems } from "@/menu-items";
 import { MenuItem, MenuShowState, MenuType } from "@/types/types";
+import { useUserContext } from "@/hooks/use-user";
 
 export type OpenedAccordion = { indent: number; id: string };
 
@@ -41,6 +42,7 @@ export default function LeftMenu() {
   const selectedPrimary = useRef<undefined | MenuItem>(undefined);
   const [activeItem, setActiveItem] = useState<MenuItem | undefined>(undefined);
   const [openedAccordions, setOpenedAccordions] = useState<OpenedAccordion[]>([]);
+  const { checkPermission } = useUserContext()
 
   const updateSelectedSecondaryItem = useCallback(() => {
     if (!activeItem?.children) {
@@ -203,7 +205,7 @@ export default function LeftMenu() {
                 className={cn("flex w-full flex-1 flex-col gap-0.5", leftMenuType === MenuType.SingleLayer && "gap-1")}
               >
                 {leftMenuItems
-                  .filter((x) => !x.hideInMenu)
+                  .filter((x) => !x.hideInMenu && checkPermission(x.canAccess, x?.permissions))
                   .map((item) =>
                     leftMenuType === MenuType.SingleLayer ? (
                       <SecondaryItem
@@ -235,7 +237,7 @@ export default function LeftMenu() {
               </Box>
               <Box className={cn("mb-5 flex w-full flex-col gap-0.5")}>
                 {leftMenuBottomItems
-                  .filter((x) => !x.hideInMenu)
+                  .filter((x) => !x.hideInMenu && checkPermission(x.canAccess, x?.permissions))
                   .map((item) =>
                     leftMenuType === MenuType.SingleLayer ? (
                       <SecondaryItem
@@ -271,7 +273,7 @@ export default function LeftMenu() {
           )}
           style={{
             width:
-              ((activeItem?.children && activeItem?.children.filter((x) => !x.hideInMenu).length > 0) ||
+              ((activeItem?.children && activeItem?.children.filter((x) => !x.hideInMenu && checkPermission(x.canAccess, x?.permissions)).length > 0) ||
                 activeItem?.content) &&
               leftSecondaryCurrent !== MenuShowState.Hide &&
               leftMenuWidth.secondary > 0
@@ -299,7 +301,7 @@ export default function LeftMenu() {
                             {activeItem?.children &&
                               activeItem?.children?.filter((x) => !x.hideInMenu).length > 0 &&
                               activeItem?.children
-                                ?.filter((x) => !x.hideInMenu)
+                                ?.filter((x) => !x.hideInMenu && checkPermission(x.canAccess, x?.permissions))
                                 .map((item) => (
                                   <SecondaryItem
                                     item={item}
@@ -313,20 +315,6 @@ export default function LeftMenu() {
                                   />
                                 ))}
                           </Box>
-
-                          {/* <Box
-                            component="a"
-                            href="#"
-                            className="group flex w-full cursor-pointer flex-col items-center justify-center gap-2"
-                          >
-                            <IllustrationLaunch className="text-primary h-45 w-45 bg-cover bg-center" />
-                            <Typography variant="body1" className="px-4 text-center">
-                              {t("menu-cta-copy")}
-                            </Typography>
-                            <Box className="group-hover:bg-primary/10 text-primary rounded-md px-5 py-2 font-medium transition-colors">
-                              {t("menu-cta-button")}
-                            </Box>
-                          </Box> */}
                         </>
                       </Box>
                     </>
