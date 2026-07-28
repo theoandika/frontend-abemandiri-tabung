@@ -86,7 +86,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiSparkle",
     label: "Jenis Isi Tabung",
     color: "text-primary",
-    permissions: ["view-supplier","create-supplier"],
+    permissions: ["view-tube-content-type","create-tube-content-type"],
     children: [
       {
         id: "tube-content-list",
@@ -94,6 +94,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Jenis Isi",
         color: "text-primary",
         href: "/jenis-isi",
+        permissions: ["view-tube-content-type"],
       },
       {
         id: "add-tube-content",
@@ -101,6 +102,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Tambah Jenis Isi",
         color: "text-primary",
         href: "/tambah-jenis-isi",
+        permissions: ["create-tube-content-type"],
       }
     ]
   },
@@ -109,6 +111,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiTubes",
     label: "Tabung",
     color: "text-primary",
+    permissions: ["view-tube","create-tube","update-tube-barcode"],
     children: [
       {
         id: "tube-list",
@@ -116,6 +119,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Daftar Tabung",
         color: "text-primary",
         href: "/tabung",
+        permissions: ["view-tube"],
       },
       {
         id: "add-tube",
@@ -123,6 +127,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Tambah Tabung",
         color: "text-primary",
         href: "/tambah-tabung",
+        permissions: ["create-tube"],
       },
       {
         id: "change-tube-barcode",
@@ -130,6 +135,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Ubah Barcode",
         color: "text-primary",
         href: "/ubah-barcode",
+        permissions: ["update-tube-barcode"],
       }
     ]
   },
@@ -138,6 +144,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiCartEmpty",
     label: "Transaksi Member",
     color: "text-primary",
+    permissions: ["view-transaction","create-transaction"],
     children: [
       {
         id: "transaction-list",
@@ -145,6 +152,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Daftar Transaksi",
         color: "text-primary",
         href: "/transaksi-member",
+        permissions: ["view-transaction"],
       },
       {
         id: "transaction-draft-list",
@@ -152,6 +160,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Draft",
         color: "text-primary",
         href: "/draft-transaksi",
+        permissions: ["create-transaction"],
       },
       {
         id: "add-transaction",
@@ -159,6 +168,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Transaksi Baru",
         color: "text-primary",
         href: "/transaksi-baru",
+        permissions: ["create-transaction"],
       }
     ]
   },
@@ -167,6 +177,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiCartEmpty",
     label: "Transaksi Supplier",
     color: "text-primary",
+    permissions: ["view-supplier-transaction","create-supplier-transaction"],
     children: [
       {
         id: "supplier-transaction-list",
@@ -174,6 +185,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Daftar Transaksi",
         color: "text-primary",
         href: "/transaksi-supplier",
+        permissions: ["view-supplier-transaction"],
       },
       {
         id: "add-transaction-supplier",
@@ -181,6 +193,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Transaksi Baru",
         color: "text-primary",
         href: "/transaksi-supplier-baru",
+        permissions: ["create-supplier-transaction"],
       }
     ]
   },
@@ -189,6 +202,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiDocumentCheck",
     label: "Stock Opname",
     color: "text-primary",
+    permissions: ["view-stock-opname","create-stock-opname"],
     children: [
       {
         id: "stock-opname-list",
@@ -196,6 +210,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Riwayat",
         color: "text-primary",
         href: "/stock-opname",
+        permissions: ["view-stock-opname"],
       },
       {
         id: "add-stock-opname",
@@ -203,6 +218,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Submit",
         color: "text-primary",
         href: "/submit-stock-opname",
+        permissions: ["create-stock-opname"],
       }
     ]
   },
@@ -211,6 +227,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiDocumentArchive",
     label: "Laporan",
     color: "text-primary",
+    permissions: ["view-tube-activity"],
     children: [
       {
         id: "tube-activity",
@@ -218,6 +235,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Aktivitas Tabung",
         color: "text-primary",
         href: "/aktivitas-tabung",
+        permissions: ["view-tube-activity"],
       },
     ]
   },

@@ -27,7 +27,7 @@ export default function UserProvider ({ children }: { children: ReactNode }) {
       }
     } else {
       if (permissions !== undefined && permissions.length > 0) {
-        if (user?.role?.permissions?.map(el => el.key).some(el => permissions.includes(el)) || user?.role?.permissions?.map(el => el.key).includes("manage-all")) {
+        if (user?.role?.permissions?.map(el => el.key).some(el => permissions.includes(el)) || user?.role?.permissions?.map(el => el.key).includes("manage-all") || user?.level == Viewer.ADMINISTRATOR) {
           return true
         } else {
           return false

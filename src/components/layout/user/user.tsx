@@ -57,8 +57,7 @@ export default function User() {
   const getUser = () => {
     axios.get(ApiEndpoint.ACCOUNT)
     .then((res2) => {
-      setUser(res2?.data?.data)      
-      navigate('/dashboard')
+      setUser(res2?.data?.data)
     })
   }
 
