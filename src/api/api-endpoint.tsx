@@ -44,7 +44,7 @@ const ApiEndpoint = {
     // stock opname
     STOCK_OPNAME: 'stock-opnames',
     STOCK_OPNAME_TUBE_LIST: 'stock-opnames/tube-list',
-    STOCK_OPNAME_INDEX: 'stock-opnames/index'
+    STOCK_OPNAME_INDEX: 'stock-opnames/index',
 }
 
 export default ApiEndpoint

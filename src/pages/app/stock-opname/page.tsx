@@ -49,6 +49,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import dayjs from "dayjs";
+import NiEyeOpen from "@/icons/nexture/ni-eye-open";
+import DetailStockOpname from "./detail";
 
 interface Row {
   id: string
@@ -60,6 +62,40 @@ interface Row {
   tube_count: number
   not_match_count: number
 };
+
+interface TubeStockOpname {
+  id: string
+  number: string
+  barcode: string
+  tube_content: {
+    id: string
+    code: string
+    name: string
+  }
+  type: "medical" | "industry"
+  own: boolean
+  status: string
+  position: string
+}
+
+interface StockOpnameItem {
+  id: string
+  tube: TubeStockOpname
+  match: boolean
+  adjust: boolean
+}
+
+interface DetailStockOpname {
+  id: string
+  date: string
+  site: {
+    id: string
+    name: string
+  }
+  tube_count: number
+  not_match_count: number
+  tubes: StockOpnameItem[]
+}
 
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
@@ -84,6 +120,7 @@ export default function Page() {
   const [deleteId, setDeleteId] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [activeData, setActiveData] = useState<DetailStockOpname | null>(null)
 
   const getRows = () => {
     setIsLoading(true)
@@ -115,6 +152,19 @@ export default function Page() {
     .catch(err => {
       let errData = err?.response?.data
       setErrorMessage(errData?.message)
+    })
+    .finally(() => setIsLoading(false))
+  }
+
+  const doBack = () => {
+    setActiveData(null)
+  }
+
+  const doDetail = (id: string) => {
+    setIsLoading(true)
+    axios.get(ApiEndpoint.STOCK_OPNAME + "/" + id)
+    .then(res => {
+      setActiveData(res?.data?.data)
     })
     .finally(() => setIsLoading(false))
   }
@@ -161,6 +211,13 @@ export default function Page() {
       getActions: (params) => [
         <GridActionsCellItem
           key={0}
+          icon={<NiEyeOpen size="medium" />}
+          label="Detail"
+          onClick={() => doDetail(params.row.id)}
+          showInMenu
+        />,
+        <GridActionsCellItem
+          key={1}
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
           onClick={() => doDelete(params.row.id)}
@@ -256,6 +313,8 @@ export default function Page() {
       </Toolbar>
     );
   }
+
+  if (activeData) return <DetailStockOpname onBack={doBack} data={activeData} />
 
   return (
     <Grid container spacing={5}>
