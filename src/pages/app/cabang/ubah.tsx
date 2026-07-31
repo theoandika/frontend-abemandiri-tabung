@@ -17,8 +17,11 @@ import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import axios from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import { useUserContext } from "@/hooks/use-user";
+import { Viewer } from "@/types/types";
 
 export default function UbahCabang() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const { id } = useParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -46,7 +49,11 @@ export default function UbahCabang() {
   }
 
   useEffect(() => {
-    initData()
+    if (!checkPermission([Viewer.ADMINISTRATOR], [])) {
+        navigate('/404')
+    } else {
+      initData()
+    }
   }, [])
 
   const save = () => {

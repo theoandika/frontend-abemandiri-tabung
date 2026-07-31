@@ -9,7 +9,7 @@ type UserContextType = {
   token?: string
   setToken: (token: string) => void;
   clearAuth: () => void,
-  checkPermission: (canAccess?: Viewer[], permissions?: string[]) => void
+  checkPermission: (canAccess?: Viewer[], permissions?: string[]) => boolean
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);

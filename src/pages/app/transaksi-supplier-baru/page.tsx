@@ -46,8 +46,10 @@ import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NiCamera from "@/icons/nexture/ni-camera";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useNavigate } from "react-router-dom";
+import { useUserContext } from "@/hooks/use-user";
 
 export default function Page() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false)
   const [site, setSite] = useState("")
@@ -149,8 +151,12 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getSiteOptions()
-    getSupplierOptions()
+    if (!checkPermission([], ['create-supplier-transaction'])) {
+      navigate('/404')
+    } else {
+      getSiteOptions()
+      getSupplierOptions()
+    }
   }, [])
 
   useEffect(() => {

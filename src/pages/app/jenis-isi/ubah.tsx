@@ -17,8 +17,10 @@ import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import axios from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import { useUserContext } from "@/hooks/use-user";
 
 export default function UbahJenisIsi() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const { id } = useParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -44,7 +46,11 @@ export default function UbahJenisIsi() {
   }
 
   useEffect(() => {
-    initData()
+    if (!checkPermission([], ['update-tube-content-type'])) {
+      navigate('/404')
+    } else {
+      initData()
+    }
   }, [])
 
   const save = () => {

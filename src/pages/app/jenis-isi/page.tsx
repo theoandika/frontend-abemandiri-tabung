@@ -49,6 +49,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
+import { useUserContext } from "@/hooks/use-user";
 
 interface Row {
   id: string,
@@ -74,6 +75,7 @@ export default function Page() {
     };
   }, []);
 
+  const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
@@ -94,7 +96,11 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getRows()
+    if (!checkPermission([], ['view-tube-content-type'])) {
+      navigate('/404')
+    } else {
+      getRows()
+    }
   }, [])
 
   const doDelete = (id: string) => {
@@ -138,20 +144,20 @@ export default function Page() {
       align: "right",
       headerAlign: "right",
       getActions: (params) => [
-        <GridActionsCellItem
+        checkPermission([], ['delete-tube-content-type']) ? <GridActionsCellItem
           key={0}
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
           onClick={() => doDelete(params.row.id)}
           showInMenu
-        />,
-        <GridActionsCellItem
+        /> : <></>,
+        checkPermission([], ['update-tube-content-type']) ? <GridActionsCellItem
           key={1}
           icon={<NiPenSquare size="medium" />}
           label="Ubah"
           onClick={() => navigate("/ubah-jenis-isi/"+params.row.id)}
           showInMenu
-        />,
+        /> : <></>,
       ],
     },
   ];
@@ -184,16 +190,18 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Tambah Jenis Isi Tabung">
-                <Button
-                  className="icon-only surface-standard"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/tambah-jenis-isi')}
-                />
-              </Tooltip>
+              {checkPermission([], ['create-tube-content-type']) && (
+                <Tooltip title="Tambah Jenis Isi Tabung">
+                  <Button
+                    className="icon-only surface-standard"
+                    size="medium"
+                    color="grey"
+                    variant="surface"
+                    startIcon={<NiPlus size={"medium"} />}
+                    onClick={() => navigate('/tambah-jenis-isi')}
+                  />
+                </Tooltip>
+              )}
             </Grid>
           </Grid>
 

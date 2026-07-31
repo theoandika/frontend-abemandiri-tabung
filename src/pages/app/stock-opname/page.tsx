@@ -51,6 +51,7 @@ import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import dayjs from "dayjs";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailStockOpname from "./detail";
+import { useUserContext } from "@/hooks/use-user";
 
 interface Row {
   id: string
@@ -114,6 +115,7 @@ export default function Page() {
     };
   }, []);
 
+  const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
@@ -135,7 +137,11 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getRows()
+    if (!checkPermission([], ['view-stock-opname'])) {
+      navigate('/404')
+    } else {
+      getRows()
+    }
   }, [])
 
   const doDelete = (id: string) => {
@@ -173,7 +179,7 @@ export default function Page() {
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
       field: "date",
-      headerName: "Kode Cabang",
+      headerName: "Tanggal",
       width: 200,
       editable: false,
       type: "dateTime",
@@ -216,13 +222,13 @@ export default function Page() {
           onClick={() => doDetail(params.row.id)}
           showInMenu
         />,
-        <GridActionsCellItem
+        checkPermission([], ['delete-stock-opname']) ? <GridActionsCellItem
           key={1}
           icon={<NiCrossSquare size="medium" />}
           label="Hapus"
           onClick={() => doDelete(params.row.id)}
           showInMenu
-        />,
+        /> : <></>,
       ],
     },
   ];
@@ -255,16 +261,18 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Submit Stok Opname">
-                <Button
-                  className="icon-only surface-standard"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/submit-stock-opname')}
-                />
-              </Tooltip>
+              {checkPermission([], ['create-stock-opname']) && (
+                <Tooltip title="Submit Stok Opname">
+                  <Button
+                    className="icon-only surface-standard"
+                    size="medium"
+                    color="grey"
+                    variant="surface"
+                    startIcon={<NiPlus size={"medium"} />}
+                    onClick={() => navigate('/submit-stock-opname')}
+                  />
+                </Tooltip>
+              )}
             </Grid>
           </Grid>
 

@@ -49,6 +49,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
+import { useUserContext } from "@/hooks/use-user";
+import { Viewer } from "@/types/types";
 
 interface Row {
   id: string,
@@ -74,6 +76,7 @@ export default function Page() {
     };
   }, []);
 
+  const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
@@ -94,7 +97,11 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getRows()
+    if (!checkPermission([Viewer.ADMINISTRATOR], [])) {
+      navigate('/404')
+    } else {
+      getRows()
+    }
   }, [])
 
   const doDelete = (id: string) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -17,8 +17,11 @@ import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import axios from "@/api/axios";
 import { useNavigate } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import { useUserContext } from "@/hooks/use-user";
+import { Viewer } from "@/types/types";
 
 export default function Page() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [code, setCode] = useState<string>("")
@@ -48,6 +51,12 @@ export default function Page() {
       setIsLoading(false)
     })
   }
+
+  useEffect(() => {
+    if (!checkPermission([Viewer.ADMINISTRATOR], [])) {
+      navigate('/404')
+    }
+  }, [])
 
   return (
     <Grid container spacing={5} className="w-full" size={12}>

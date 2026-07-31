@@ -11,7 +11,7 @@ import {
   Select,
   SelectProps,
   Tooltip,
-  Typography
+  Typography,
 } from "@mui/material";
 import {
   ColumnsPanelTrigger,
@@ -23,11 +23,10 @@ import {
   QuickFilter,
   QuickFilterClear,
   QuickFilterControl,
-  Toolbar
+  Toolbar,
 } from "@mui/x-data-grid";
 
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
-import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
 import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
@@ -40,31 +39,37 @@ import NiFilter from "@/icons/nexture/ni-filter";
 import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
 import NiSearch from "@/icons/nexture/ni-search";
 import { cn } from "@/lib/utils";
+
 import ApiEndpoint from "@/api/api-endpoint"
-import dayjs from "dayjs";
-import 'dayjs/locale/id'
 import axios from "@/api/axios";
-import NiCheckSquare from "@/icons/nexture/ni-check-square";
+import dayjs from "dayjs";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import { useUserContext } from "@/hooks/use-user";
 import { useNavigate } from "react-router-dom";
 
 interface Row {
   id: string
   date: string
+  site: {
+    id: string
+    name: string
+  }
   number: string
   barcode: string
-  content: {
+  tube_content: {
     id: string
     code: string
     name: string
   }
-  transaction_type: "in" | "out" | "return" | "sell" | "refill" | "filled" | "fixing" | "fixed"
-  tube_status: "filled" | "empty" | "broken" | "expired" | "display"
+  type: 'medical' | 'industry'
+  tube_owner: 'Tabung DM' | 'Non DM'
+  status: 'filled' | 'empty' | 'broken' | 'expired' | 'display'
   position: string
   position_name: string
-  adjust_by_stock_opname: boolean
-};
+  match: boolean
+  adjust: boolean
+}
 
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
@@ -90,9 +95,9 @@ export default function Page() {
 
   const getRows = () => {
     setIsLoading(true)
-    axios.get(ApiEndpoint.TUBE_ACTIVITY_REPORT)
+    axios.get(ApiEndpoint.TUBE_STOCK_OPNAME_REPORT)
     .then((res) => {
-      let result: Row[] = res.data?.data
+      let result: Row[] = res.data?.data?.map((item: Row) => ({ ...item, id: crypto.randomUUID() }))
       setRows(result)
     })
     .finally(() => {
@@ -101,7 +106,7 @@ export default function Page() {
   }
 
   useEffect(() => {
-    if (!checkPermission([], ['view-tube-activity'])) {
+    if (!checkPermission([], ['view-tube-stock-opname'])) {
       navigate('/404')
     } else {
       getRows()
@@ -119,6 +124,13 @@ export default function Page() {
       valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
     },
     {
+      field: "site",
+      headerName: "Cabang",
+      width: 150,
+      editable: false,
+      valueGetter: (_, row) => row.site.name,
+    },
+    {
       field: "number",
       headerName: "Nomor",
       width: 100,
@@ -131,53 +143,46 @@ export default function Page() {
       editable: false,
     },
     {
-      field: "content",
+      field: "tube_content",
       headerName: "Isi",
+      width: 100,
       editable: false,
-      width: 150,
-      valueGetter: (_, row) => `${row.content.code} - ${row.content.name}`,
+      valueGetter: (_, row) => `${row.tube_content.code} - ${row.tube_content.name}`
     },
     {
-      field: "transaction_type",
-      headerName: "Aktivitas",
+      field: "type",
+      headerName: "Jenis",
       width: 100,
       editable: false,
       type: "singleSelect",
       valueOptions: [
-        { value: "in", label: 'Masuk' },
-        { value: "out", label: 'Keluar' },
-        { value: "return", label: 'Retur' },
-        { value: "sell", label: 'Jual' },
-        { value: "refill", label: 'Isi Ulang' },
-        { value: "filled", label: 'Selesai Isi Ulang' },
-        { value: "fixing", label: 'Perbaikan' },
-        { value: "fixed", label: 'Selesai Perbaikan' },
+        { value: "medical", label: 'Medis' },
+        { value: "industry", label: 'Industri' },
       ],
       valueFormatter: (value) => {
         switch (value) {
-          case "in":
-            return "Masuk";
-          case "out":
-            return "Keluar";
-          case "return":
-            return "Retur";
-          case "sell":
-            return "Jual";
-          case "refill":
-            return "Isi Ulang";
-          case "filled":
-            return "Selesai Isi Ulang";
-          case "fixing":
-            return "Perbaikan";
-          case "fixed":
-            return "Selesai Perbaikan";
+          case "medical":
+            return "Medis";
+          case "industry":
+            return "Industri";
           default:
             return "";
         }
       },
     },
     {
-      field: "tube_status",
+      field: "tube_owner",
+      headerName: "Pemilik",
+      width: 100,
+      editable: false,
+      type: "singleSelect",
+      valueOptions: [
+        { value: "Tabung DM", label: 'Tabung DM' },
+        { value: "Non DM", label: 'Non DM' },
+      ],
+    },
+    {
+      field: "status",
       headerName: "Kondisi",
       width: 100,
       editable: false,
@@ -192,23 +197,23 @@ export default function Page() {
       valueFormatter: (value) => {
         switch (value) {
           case "filled":
-            return "Isi";
+            return "Isi"
           case "empty":
-            return "Kosong";
+            return "Kosong"
           case "broken":
-            return "Rusak";
+            return "Rusak"
           case "expired":
-            return "Afkir";
+            return "Afkir"
           case "display":
-            return "Pajangan";
+            return "Pajangan"
           default:
-            return "";
+            return "Tidak diketahui"
         }
       },
     },
     {
       field: "position",
-      headerName: "Posisi",
+      headerName: "Posisi Tabung",
       width: 100,
       editable: false,
       type: "singleSelect",
@@ -239,14 +244,23 @@ export default function Page() {
     {
       field: "position_name",
       headerName: "Nama Posisi",
+      width: 100,
       editable: false,
-      width: 150,
     },
     {
-      field: "adjust_by_stock_opname",
-      headerName: "Penyesuaian SO",
+      field: "match",
+      headerName: "Sesuai",
       editable: false,
-      width: 100,
+      type: "boolean",
+      renderCell: (params: GridRenderCellParams<any, boolean>) => {
+        const value = params.value;
+        return value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />
+      },
+    },
+    {
+      field: "adjust",
+      headerName: "Disesuaikan",
+      editable: false,
       type: "boolean",
       renderCell: (params: GridRenderCellParams<any, boolean>) => {
         const value = params.value;
@@ -262,12 +276,12 @@ export default function Page() {
           <Grid container spacing={2.5} className="w-full" size={12}>
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">
-                Laporan Aktivitas Tabung
+                Laporan Stock Opname Tabung
               </Typography>
             </Grid>
 
             <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Columns">
+              <Tooltip title="Pengaturan Kolom">
                 <ColumnsPanelTrigger
                   render={(props) => (
                     <Button
@@ -280,16 +294,6 @@ export default function Page() {
                       <NiCols size={"medium"} />
                     </Button>
                   )}
-                />
-              </Tooltip>
-
-              <Tooltip title="Download Excel">
-                <Button
-                  className="icon-only surface-standard flex-none"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiArrowInDown size={"medium"} />}
                 />
               </Tooltip>
             </Grid>
@@ -339,7 +343,7 @@ export default function Page() {
           rows={rows}
           columns={columns}
           initialState={{
-            columns: { columnVisibilityModel: { id: false } }
+            columns: { columnVisibilityModel: { id: false } },
           }}
           getRowSpacing={getRowSpacing}
           rowHeight={68}

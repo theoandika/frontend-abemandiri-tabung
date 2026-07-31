@@ -25,8 +25,10 @@ import { useDropzone } from "react-dropzone";
 import axios from "@/api/axios";
 import { useNavigate } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import { useUserContext } from "@/hooks/use-user";
 
 export default function Page() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [number, setNumber] = useState("")
@@ -97,6 +99,9 @@ export default function Page() {
   }
 
   useEffect(() => {
+    if (!checkPermission([], ['create-tube'])) {
+      navigate('/404')
+    }
     getContentOptions()
   }, [])
 

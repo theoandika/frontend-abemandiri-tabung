@@ -111,7 +111,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiTubes",
     label: "Tabung",
     color: "text-primary",
-    permissions: ["view-tube","create-tube","update-tube-barcode"],
+    permissions: ["view-tube","create-tube","view-tube-barcode"],
     children: [
       {
         id: "tube-list",
@@ -135,7 +135,7 @@ export const leftMenuItems: MenuItem[] = [
         label: "Ubah Barcode",
         color: "text-primary",
         href: "/ubah-barcode",
-        permissions: ["update-tube-barcode"],
+        permissions: ["view-tube-barcode"],
       }
     ]
   },
@@ -227,7 +227,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiDocumentArchive",
     label: "Laporan",
     color: "text-primary",
-    permissions: ["view-tube-activity"],
+    permissions: ["view-tube-activity","view-tube-stock-opname"],
     children: [
       {
         id: "tube-activity",
@@ -236,6 +236,14 @@ export const leftMenuItems: MenuItem[] = [
         color: "text-primary",
         href: "/aktivitas-tabung",
         permissions: ["view-tube-activity"],
+      },
+      {
+        id: "tube-stock-opname",
+        icon: "NiListCheck",
+        label: "Stock Opname Tabung",
+        color: "text-primary",
+        href: "/stock-opname-tabung",
+        permissions: ["view-tube-stock-opname"],
       },
     ]
   },
@@ -253,14 +261,14 @@ export const leftMenuBottomItems: MenuItem[] = [
       {
         id: "role-list",
         icon: "NiList",
-        label: "Riwayat",
+        label: "Daftar Role",
         color: "text-primary",
         href: "/role",
       },
       {
         id: "add-role",
         icon: "NiPlusSquare",
-        label: "Submit",
+        label: "Tambah Role",
         color: "text-primary",
         href: "/tambah-role",
       }
@@ -276,14 +284,14 @@ export const leftMenuBottomItems: MenuItem[] = [
       {
         id: "user-list",
         icon: "NiList",
-        label: "Riwayat",
+        label: "Daftar User",
         color: "text-primary",
         href: "/user",
       },
       {
         id: "add-user",
         icon: "NiPlusSquare",
-        label: "Submit",
+        label: "Tambah User",
         color: "text-primary",
         href: "/tambah-user",
       }

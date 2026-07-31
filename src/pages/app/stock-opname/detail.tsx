@@ -138,7 +138,7 @@ export default function DetailStockOpname({ data, onBack }: DialogProps) {
     },
     {
       field: "tube.status",
-      headerName: "Posisi Tabung",
+      headerName: "Kondisi",
       editable: false,
       valueGetter: (_, row) => {
         switch (row.tube.status) {

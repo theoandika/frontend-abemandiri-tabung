@@ -17,9 +17,11 @@ import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import axios from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
+import { useUserContext } from "@/hooks/use-user";
 
 export default function UbahSupplier() {
   const navigate = useNavigate()
+  const { checkPermission } = useUserContext()
   const { id } = useParams()
   const [isLoading, setIsLoading] = useState(false)
   const [code, setCode] = useState<string>("")
@@ -46,7 +48,11 @@ export default function UbahSupplier() {
   }
 
   useEffect(() => {
-    initData()
+    if (!checkPermission([], ['update-supplier'])) {
+      navigate('/404')
+    } else {
+      initData()
+    }
   }, [])
 
   const save = () => {

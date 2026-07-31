@@ -102,7 +102,7 @@ export default function DetailSupplierTransaction({ data, onBack }: DialogProps)
     },
     {
       field: "tube_owner",
-      headerName: "Tabung DM",
+      headerName: "Pemilik",
       editable: false,
     },
   ];

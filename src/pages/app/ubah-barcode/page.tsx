@@ -37,6 +37,7 @@ import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
 import NiDocumentImage from "@/icons/nexture/ni-document-image";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import Loading from "@/pages/loading";
+import { useUserContext } from "@/hooks/use-user";
 
 interface Row {
   id: string
@@ -67,6 +68,7 @@ interface RowSave {
 }
 
 export default function Page() {
+  const { checkPermission } = useUserContext()
   const theme = useTheme();
   const fullScreenResponsive = useMediaQuery(theme.breakpoints.down("md"));
   const [loading, setLoading] = useState<boolean>(false)
@@ -136,7 +138,11 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getRows()
+    if (!checkPermission([], ['view-tube-barcode'])) {
+      navigate('/404')
+    } else {
+      getRows()
+    }
   }, [])
 
   const save = () => {
@@ -172,21 +178,23 @@ export default function Page() {
               </Typography>
             </Grid>
 
-            <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Simpan">
-                <Button
-                  loading={loading}
-                  loadingPosition="start"
-                  className="surface-standard"
-                  size="medium"
-                  color="primary"
-                  variant="surface"
-                  startIcon={<NiFloppyDisk size={"medium"} />}
-                  onClick={() => save()}
-                  disabled={rowsSave.filter(el => el.isSave).length < 1}
-                >Simpan</Button>
-              </Tooltip>
-            </Grid>
+            {checkPermission([], ['update-tube-barcode']) && (
+              <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
+                <Tooltip title="Simpan">
+                  <Button
+                    loading={loading}
+                    loadingPosition="start"
+                    className="surface-standard"
+                    size="medium"
+                    color="primary"
+                    variant="surface"
+                    startIcon={<NiFloppyDisk size={"medium"} />}
+                    onClick={() => save()}
+                    disabled={rowsSave.filter(el => el.isSave).length < 1}
+                  >Simpan</Button>
+                </Tooltip>
+              </Grid>
+            )}
           </Grid>
 
           <Grid container spacing={5} className="w-full" size={12}>
@@ -219,31 +227,33 @@ export default function Page() {
                   <Typography variant="h6" component="h6" className="card-title">
                     Nomor Tabung : {item.number}
                   </Typography>
-                  <FormControl>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={rowsSave.filter(el => el.tube_id == item.id)[0]?.isSave ?? false}
-                          icon={<CheckboxSmallEmptyOutlined />}
-                          checkedIcon={<CheckboxSmallChecked />}
-                          size="small"
-                          slotProps={{
-                            input: { 'aria-label': 'controlled' },
-                          }}
-                          onChange={(e) => {
-                            let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
-                            let old = [...rowsSave]
-                            let change = {...old[dataToSave]}
-                            change.isSave = e.target.checked
-                            old[dataToSave] = change
-                            setRowsSave(old)
-                          }}
-                          disabled={loading}
-                        />
-                      }
-                      label="Simpan"
-                    />
-                  </FormControl>
+                  {checkPermission([], ['update-tube-barcode']) && (
+                    <FormControl>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={rowsSave.filter(el => el.tube_id == item.id)[0]?.isSave ?? false}
+                            icon={<CheckboxSmallEmptyOutlined />}
+                            checkedIcon={<CheckboxSmallChecked />}
+                            size="small"
+                            slotProps={{
+                              input: { 'aria-label': 'controlled' },
+                            }}
+                            onChange={(e) => {
+                              let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
+                              let old = [...rowsSave]
+                              let change = {...old[dataToSave]}
+                              change.isSave = e.target.checked
+                              old[dataToSave] = change
+                              setRowsSave(old)
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="Simpan"
+                      />
+                    </FormControl>
+                  )}
                 </Box>
                 {errors != undefined && (errors[`tube_barcodes.${idx}.photo`] != undefined || errors[`tube_barcodes.${idx}.barcode`] != undefined) && (
                   <Alert className="mb-2" color="error" icon={<NiCrossSquare />} >
@@ -252,88 +262,90 @@ export default function Page() {
                   </Alert>
                 )}
                 <Grid container size={12} spacing={5}>
-                  <Grid className="flex flex-col items-center border border-grey-100 rounded-md p-2 gap-2" size={{ xs: 6, md: 4, lg: 3, xl: 2 }}>
-                    <Box className="flex flex-row items-center gap-1 w-full">
-                      <TextField
-                        value={rowsSave.filter(el => el.tube_id == item.id)[0]?.barcode}
-                        variant="standard"
-                        size="small"
-                        placeholder="Barcode"
-                        fullWidth
-                        className="mb-0 flex-1"
-                        onChange={(e) => {
-                          let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
-                          let old = [...rowsSave]
-                          let change = {...old[dataToSave]}
-                          change.barcode = e.target.value
-                          old[dataToSave] = change
-                          setRowsSave(old)
-                        }}
-                        disabled={loading}
-                      />
-                      <Button
-                        className="icon-only"
-                        size="medium"
-                        color="primary"
-                        variant="contained"
-                        onClick={() => {
-                          setActiveScanId(item.id)
-                          setScanPaused(!scanPaused)
-                        }}
-                        startIcon={<NiCamera size={"medium"} />}
-                        disabled={loading}
-                      />
-                    </Box>
-                    <Box className="flex-1 flex items-center justify-center w-full">
-                      <img className="rounded-md" alt="Preview" src={rowsSave.filter(el => el.tube_id == item.id)[0].photo != null ? URL.createObjectURL(rowsSave.filter(el => el.tube_id == item.id)[0].photo!) : null!}  />
-                    </Box>
-                    <Box className="flex gap-1">
-                      <input
-                        id={`file-input-${item.id}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
-                          let old = [...rowsSave]
-                          let change = {...old[dataToSave]}
-                          change.photo = e.target.files != null ? e.target.files[0] : null
-                          old[dataToSave] = change
-                          setRowsSave(old)
-                        }}
-                        disabled={loading}
-                      />
-                      <Button
-                        className="icon-only"
-                        size="medium"
-                        color="primary"
-                        variant="contained"
-                        onClick={() => {
-                          document.getElementById(`file-input-${item.id}`)?.click()
-                        }}
-                        startIcon={<NiDocumentImage size={"medium"} />}
-                        disabled={loading}
-                      />
-                      {rowsSave.filter(el => el.tube_id == item.id)[0].photo != null && (
-                        <Button
-                          className="icon-only"
-                          size="medium"
-                          color="error"
-                          variant="contained"
-                          onClick={() => {
+                  {checkPermission([], ['update-tube-barcode']) && (
+                    <Grid className="flex flex-col items-center border border-grey-100 rounded-md p-2 gap-2" size={{ xs: 6, md: 4, lg: 3, xl: 2 }}>
+                      <Box className="flex flex-row items-center gap-1 w-full">
+                        <TextField
+                          value={rowsSave.filter(el => el.tube_id == item.id)[0]?.barcode}
+                          variant="standard"
+                          size="small"
+                          placeholder="Barcode"
+                          fullWidth
+                          className="mb-0 flex-1"
+                          onChange={(e) => {
                             let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
                             let old = [...rowsSave]
                             let change = {...old[dataToSave]}
-                            change.photo = null
+                            change.barcode = e.target.value
                             old[dataToSave] = change
                             setRowsSave(old)
                           }}
-                          startIcon={<NiCrossSquare size={"medium"} />}
                           disabled={loading}
                         />
-                      )}
-                    </Box>
-                  </Grid>
+                        <Button
+                          className="icon-only"
+                          size="medium"
+                          color="primary"
+                          variant="contained"
+                          onClick={() => {
+                            setActiveScanId(item.id)
+                            setScanPaused(!scanPaused)
+                          }}
+                          startIcon={<NiCamera size={"medium"} />}
+                          disabled={loading}
+                        />
+                      </Box>
+                      <Box className="flex-1 flex items-center justify-center w-full">
+                        <img className="rounded-md" alt="Preview" src={rowsSave.filter(el => el.tube_id == item.id)[0].photo != null ? URL.createObjectURL(rowsSave.filter(el => el.tube_id == item.id)[0].photo!) : null!}  />
+                      </Box>
+                      <Box className="flex gap-1">
+                        <input
+                          id={`file-input-${item.id}`}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
+                            let old = [...rowsSave]
+                            let change = {...old[dataToSave]}
+                            change.photo = e.target.files != null ? e.target.files[0] : null
+                            old[dataToSave] = change
+                            setRowsSave(old)
+                          }}
+                          disabled={loading}
+                        />
+                        <Button
+                          className="icon-only"
+                          size="medium"
+                          color="primary"
+                          variant="contained"
+                          onClick={() => {
+                            document.getElementById(`file-input-${item.id}`)?.click()
+                          }}
+                          startIcon={<NiDocumentImage size={"medium"} />}
+                          disabled={loading}
+                        />
+                        {rowsSave.filter(el => el.tube_id == item.id)[0].photo != null && (
+                          <Button
+                            className="icon-only"
+                            size="medium"
+                            color="error"
+                            variant="contained"
+                            onClick={() => {
+                              let dataToSave = rowsSave.findIndex(el => el.tube_id == item.id)
+                              let old = [...rowsSave]
+                              let change = {...old[dataToSave]}
+                              change.photo = null
+                              old[dataToSave] = change
+                              setRowsSave(old)
+                            }}
+                            startIcon={<NiCrossSquare size={"medium"} />}
+                            disabled={loading}
+                          />
+                        )}
+                      </Box>
+                    </Grid>
+                  )}
                   {item.tube_barcodes.map((item2, _) => (
                     <Grid className="flex flex-col items-center border border-grey-100 rounded-md p-2 gap-2" size={{ xs: 6, md: 4, lg: 3, xl: 2 }}>
                       <Typography>

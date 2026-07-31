@@ -60,6 +60,7 @@ import NiCrossFull from "@/icons/nexture/ni-cross-full";
 import NiCheckFull from "@/icons/nexture/ni-check-full";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailTube from "./detail";
+import { useUserContext } from "@/hooks/use-user";
 
 interface Row {
   id: string,
@@ -104,6 +105,7 @@ export default function Page() {
     };
   }, []);
 
+  const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false)
@@ -126,7 +128,11 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getRows()
+    if (!checkPermission([], ['view-tube'])) {
+      navigate('/404')
+    } else {
+      getRows()
+    }
   }, [])
 
   const doDelete = (id: string) => {
@@ -185,13 +191,18 @@ export default function Page() {
       headerName: "Isi",
       width: 100,
       editable: false,
-      valueGetter: (_, row) => row.tube_content?.name,
+      valueGetter: (_, row) => `${row.tube_content.code} - ${row.tube_content.name}`,
     },
     {
       field: "type",
       headerName: "Jenis",
       width: 100,
       editable: false,
+      type: "singleSelect",
+      valueOptions: [
+        { value: "medical", label: 'Medis' },
+        { value: "industry", label: 'Industri' },
+      ],
       valueFormatter: (value) => {
         switch (value) {
           case "medical":
@@ -262,6 +273,7 @@ export default function Page() {
         { value: "broken", label: 'Rusak' },
         { value: "expired", label: 'Afkir' },
         { value: "display", label: 'Pajangan' },
+        { value: "unknown", label: 'Tidak diketahui' },
       ],
       renderCell: (params: GridRenderCellParams<any, string>) => {
         const value = params.value;
@@ -276,8 +288,10 @@ export default function Page() {
             return "Afkir"
           case "display":
             return "Pajangan"
-          default:
+          case "unknown":
             return "Tidak diketahui"
+          default:
+            return ""
         }
       },
     },
@@ -315,27 +329,27 @@ export default function Page() {
             onClick={() => doOpenDetail(params.row)}
             showInMenu
           />,
-          <GridActionsCellItem
+          checkPermission([], ['delete-tube']) ? <GridActionsCellItem
             key={1}
             icon={<NiCrossSquare size="medium" />}
             label="Hapus"
             onClick={() => doDelete(params.row.id)}
             showInMenu
-          />,
-          <GridActionsCellItem
+          /> : <></>,
+          checkPermission([], ['update-tube']) ? <GridActionsCellItem
             key={2}
             icon={<NiPenSquare size="medium" />}
             label="Ubah"
             onClick={() => navigate("/ubah-tabung/" + params.row.id)}
             showInMenu
-          />,
-          <GridActionsCellItem
+          /> : <></>,
+          checkPermission([], ['update-tube']) ? <GridActionsCellItem
             key={3}
             icon={params.row.active ? <NiCrossFull size="medium" /> : <NiCheckFull size="medium" />}
             label={params.row.active ? "Non Aktif" : "Aktif"}
             onClick={() => params.row.active ? deactivate(params.row.id) : activate(params.row.id)}
             showInMenu
-          />,
+          /> : <></>,
         ]
       }
     },
@@ -379,27 +393,31 @@ export default function Page() {
                 />
               </Tooltip>
 
-              <Tooltip title="Ubah Barcode">
-                <Button
-                  className="icon-only surface-standard"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiBarcode size={"medium"} />}
-                  onClick={() => navigate('/ubah-barcode')}
-                />
-              </Tooltip>
+              {checkPermission([], ['view-tube-barcode']) && (
+                <Tooltip title="Ubah Barcode">
+                  <Button
+                    className="icon-only surface-standard"
+                    size="medium"
+                    color="grey"
+                    variant="surface"
+                    startIcon={<NiBarcode size={"medium"} />}
+                    onClick={() => navigate('/ubah-barcode')}
+                  />
+                </Tooltip>
+              )}
 
-              <Tooltip title="Tambah Tabung">
-                <Button
-                  className="icon-only surface-standard"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiPlus size={"medium"} />}
-                  onClick={() => navigate('/tambah-tabung')}
-                />
-              </Tooltip>
+              {checkPermission([], ['create-tube']) && (
+                <Tooltip title="Tambah Tabung">
+                  <Button
+                    className="icon-only surface-standard"
+                    size="medium"
+                    color="grey"
+                    variant="surface"
+                    startIcon={<NiPlus size={"medium"} />}
+                    onClick={() => navigate('/tambah-tabung')}
+                  />
+                </Tooltip>
+              )}
             </Grid>
           </Grid>
 

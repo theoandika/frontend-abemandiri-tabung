@@ -1,5 +1,6 @@
 import ApiEndpoint from "@/api/api-endpoint";
 import DialogYesNo from "@/components/dialog/dialog-yes-no";
+import { useUserContext } from "@/hooks/use-user";
 import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import NiCheck from "@/icons/nexture/ni-check";
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
@@ -65,6 +66,7 @@ interface Supplier {
 }
 
 export default function DetailMemberTransaction() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [tubeList, setTubeList] = useState<TubeList[]>([])
@@ -193,9 +195,13 @@ export default function DetailMemberTransaction() {
   }, [tubeList])
 
   useEffect(() => {
-    getSiteOptions()
-    getMemberOptions()
-    getSupplierOptions()
+    if (!checkPermission([], ['create-stock-opname'])) {
+      navigate('/404')
+    } else {
+      getSiteOptions()
+      getMemberOptions()
+      getSupplierOptions()
+    }
   }, [])
 
   const doEditSite = () => {

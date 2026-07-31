@@ -49,8 +49,10 @@ import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/db";
+import { useUserContext } from "@/hooks/use-user";
 
 export default function Page() {
+  const { checkPermission } = useUserContext()
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false)
   const [site, setSite] = useState("")
@@ -243,8 +245,12 @@ export default function Page() {
   }
 
   useEffect(() => {
-    getSiteOptions()
-    getMemberOptions()
+    if (!checkPermission([], ['create-transaction'])) {
+      navigate('/404')
+    } else {
+      getSiteOptions()
+      getMemberOptions()
+    }
   }, [])
 
   const deleteBarcode = (id: string) => {
