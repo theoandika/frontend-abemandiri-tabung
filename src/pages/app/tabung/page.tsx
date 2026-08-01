@@ -61,6 +61,7 @@ import NiCheckFull from "@/icons/nexture/ni-check-full";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailTube from "./detail";
 import { useUserContext } from "@/hooks/use-user";
+import * as XLSX from 'xlsx'; 
 
 interface Row {
   id: string,
@@ -170,6 +171,13 @@ export default function Page() {
   const doOpenDetail = (data: Row) => {
     setActiveData(data)
     setOpenDetail(true)
+  }
+
+  const exportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    XLSX.writeFile(workbook, "MYSavedData.xlsx");
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -390,6 +398,7 @@ export default function Page() {
                   color="grey"
                   variant="surface"
                   startIcon={<NiArrowInDown size={"medium"} />}
+                  onClick={() => exportExcel()}
                 />
               </Tooltip>
 
