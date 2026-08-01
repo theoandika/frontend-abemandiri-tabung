@@ -23,7 +23,9 @@ import {
   QuickFilter,
   QuickFilterClear,
   QuickFilterControl,
-  Toolbar
+  Toolbar,
+  gridFilteredSortedRowEntriesSelector,
+  useGridApiRef
 } from "@mui/x-data-grid";
 
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
@@ -48,6 +50,7 @@ import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useUserContext } from "@/hooks/use-user";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from 'xlsx';
 
 interface Row {
   id: string
@@ -83,6 +86,7 @@ export default function Page() {
     };
   }, []);
 
+  const apiRef = useGridApiRef();
   const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const [rows, setRows] = useState<Row[]>([]);
@@ -107,6 +111,79 @@ export default function Page() {
       getRows()
     }
   }, [])
+
+  const exportExcel = () => {
+    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
+    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
+    const dataExport = filteredRows.map((row) => {
+      return {
+        Tanggal: dayjs(row.date).locale('id').format("DD MMMM YYYY HH:mm"),
+        Nomor: row.number,
+        Barcode: row.barcode,
+        Isi: `${row.content.code} - ${row.content.name}`,
+        Aktivitas: (() => {
+          switch (row.transaction_type) {
+            case "in":
+              return "Masuk";
+            case "out":
+              return "Keluar";
+            case "return":
+              return "Retur";
+            case "sell":
+              return "Jual";
+            case "refill":
+              return "Isi Ulang";
+            case "filled":
+              return "Selesai Isi Ulang";
+            case "fixing":
+              return "Perbaikan";
+            case "fixed":
+              return "Selesai Perbaikan";
+            default:
+              return "";
+          }
+        })(),
+        Kondisi: (() => {
+          switch (row.tube_status) {
+            case "filled":
+              return "Isi";
+            case "empty":
+              return "Kosong";
+            case "broken":
+              return "Rusak";
+            case "expired":
+              return "Afkir";
+            case "display":
+              return "Pajangan";
+            default:
+              return "";
+          }
+        })(),
+        Posisi: (() => {
+          switch (row.position) {
+            case "site":
+              return "Cabang";
+            case "supplier":
+              return "Supplier";
+            case "member":
+              return "Member";
+            case "transit":
+              return "Transit";
+            case "unknown":
+              return "Tidak diketahui";
+            default:
+              return "";
+          }
+        })(),
+        "Nama Posisi": row.position_name,
+        "Penyesuaian SO": row.adjust_by_stock_opname ? "Ya" : "Tidak",
+      }
+    })
+    const worksheet = XLSX.utils.json_to_sheet(dataExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    XLSX.writeFile(workbook, "laporan_aktivitas_tabung.xlsx");
+  }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
@@ -290,6 +367,7 @@ export default function Page() {
                   color="grey"
                   variant="surface"
                   startIcon={<NiArrowInDown size={"medium"} />}
+                  onClick={exportExcel}
                 />
               </Tooltip>
             </Grid>
@@ -335,6 +413,7 @@ export default function Page() {
     <Grid container spacing={5}>
       <Grid size={12}>
         <DataGrid
+          apiRef={apiRef}
           loading={isLoading}
           rows={rows}
           columns={columns}

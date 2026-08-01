@@ -20,12 +20,14 @@ import {
   DataGrid,
   GridActionsCellItem,
   GridColDef,
+  gridFilteredSortedRowEntriesSelector,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
   QuickFilterClear,
   QuickFilterControl,
-  Toolbar
+  Toolbar,
+  useGridApiRef
 } from "@mui/x-data-grid";
 
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
@@ -53,6 +55,7 @@ import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailMemberTransaction from "./detail";
 import { useUserContext } from "@/hooks/use-user";
+import * as XLSX from 'xlsx';
 
 interface Row {
   id: string
@@ -84,6 +87,15 @@ interface Row {
   }[],
 };
 
+interface DataExport {
+  Tanggal: string
+  Cabang: string
+  Member: string
+  "Masuk/Keluar": string
+  Kondisi: string
+  Tabung: number
+}
+
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
     type: "include",
@@ -101,6 +113,7 @@ export default function Page() {
     };
   }, []);
 
+  const apiRef = useGridApiRef();
   const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
@@ -157,6 +170,51 @@ export default function Page() {
   const doBack = () => {
     setActiveData(null)
     setOpenDetail(false)
+  }
+
+  const exportExcel = () => {
+    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
+    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
+    const dataExport: DataExport[] = filteredRows.map(row => ({
+      Tanggal: dayjs(row.date).locale('id').format("DD MMMM YYYY HH:mm"),
+      Cabang: row.site.name,
+      Member: row.member ? `${row.member.code} - ${row.member.name}` : '',
+      "Masuk/Keluar": (() => {
+        switch (row.transaction_type) {
+          case "in":
+            return "Masuk";
+          case "out":
+            return "Keluar";
+          case "return":
+            return "Retur";
+          case "sell":
+            return "Jual";
+          default:
+            return "";
+        }
+      })(),
+      Kondisi: (() => {
+        switch (row.tube_status) {
+          case "filled":
+            return "Isi";
+          case "empty":
+            return "Kosong";
+          case "broken":
+            return "Rusak";
+          case "expired":
+            return "Afkir";
+          case "display":
+            return "Pajangan";
+          default:
+            return "";
+        }
+      })(),
+      Tabung: row.items.length,
+    }));
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data Transaksi Member");
+    XLSX.writeFile(wb, "data_transaksi_member.xlsx");
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -312,6 +370,7 @@ export default function Page() {
                   color="grey"
                   variant="surface"
                   startIcon={<NiArrowInDown size={"medium"} />}
+                  onClick={exportExcel}
                 />
               </Tooltip>
 
@@ -381,6 +440,7 @@ export default function Page() {
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
+          apiRef={apiRef}
           loading={isLoading}
           rows={rows}
           columns={columns}

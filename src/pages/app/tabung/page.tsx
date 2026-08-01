@@ -21,6 +21,7 @@ import {
   DataGrid,
   GridActionsCellItem,
   GridColDef,
+  gridFilteredSortedRowEntriesSelector,
   GridRenderCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
@@ -28,6 +29,7 @@ import {
   QuickFilterClear,
   QuickFilterControl,
   Toolbar,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 
 // import DataGridInput from "@/components/data-grid/data-grid-input";
@@ -61,7 +63,7 @@ import NiCheckFull from "@/icons/nexture/ni-check-full";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailTube from "./detail";
 import { useUserContext } from "@/hooks/use-user";
-import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx';
 
 interface Row {
   id: string,
@@ -89,6 +91,17 @@ interface Row {
   photo?: string
 };
 
+interface DataExport {
+  Nomor: string
+  Barcode: string
+  Isi: string
+  Jenis: string
+  Pemilik: string
+  Posisi: string
+  Kondisi: string
+  Aktif: string
+}
+
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
     type: "include",
@@ -106,6 +119,7 @@ export default function Page() {
     };
   }, []);
 
+  const apiRef = useGridApiRef();
   const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
@@ -174,10 +188,22 @@ export default function Page() {
   }
 
   const exportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
+    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
+    const dataExport: DataExport[] = filteredRows.map((row) => ({
+      Nomor: row.number,
+      Barcode: row.barcode || "",
+      Isi: `${row.tube_content.code} - ${row.tube_content.name}`,
+      Jenis: row.type === "medical" ? "Medis" : row.type === "industry" ? "Industri" : "",
+      Pemilik: row.own ? "Tabung DM" : row.second_owner ? `Member (${row.second_owner.code} - ${row.second_owner.name})` : "",
+      Posisi: row.position === "site" ? "Cabang" : row.position === "supplier" ? "Supplier" : row.position === "member" ? "Member" : row.position === "transit" ? "Transit" : row.position === "unknown" ? "Tidak diketahui" : "",
+      Kondisi: row.status === "filled" ? "Isi" : row.status === "empty" ? "Kosong" : row.status === "broken" ? "Rusak" : row.status === "expired" ? "Afkir" : row.status === "display" ? "Pajangan" : row.status === "unknown" ? "Tidak diketahui" : "",
+      Aktif: row.active ? "Ya" : "Tidak",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    XLSX.writeFile(workbook, "MYSavedData.xlsx");
+    XLSX.writeFile(workbook, "data_tabung.xlsx");
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -398,7 +424,7 @@ export default function Page() {
                   color="grey"
                   variant="surface"
                   startIcon={<NiArrowInDown size={"medium"} />}
-                  onClick={() => exportExcel()}
+                  onClick={exportExcel}
                 />
               </Tooltip>
 
@@ -482,6 +508,7 @@ export default function Page() {
       <DetailTube openDialog={openDetail} setOpenDialog={setOpenDetail} data={activeData} />
       <Grid size={12}>
         <DataGrid
+          apiRef={apiRef}
           loading={isLoading}
           rows={rows}
           columns={columns}
