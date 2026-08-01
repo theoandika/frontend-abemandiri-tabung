@@ -5,6 +5,7 @@ const ApiEndpoint = {
 
     // account
     ACCOUNT: 'account/detail',
+    CHANGE_PASSWORD: 'account/update-password',
 
     // member
     MEMBER_ALL: "members",

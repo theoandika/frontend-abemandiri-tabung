@@ -140,7 +140,7 @@ export default function User() {
                         <MenuItem
                           onClick={(event) => {
                             handleClose(event);
-                            navigate("/settings");
+                            navigate("/ganti-password");
                           }}
                         >
                           <ListItemIcon>
