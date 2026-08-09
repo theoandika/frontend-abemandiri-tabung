@@ -36,6 +36,7 @@
     "@types/react-scroll-to-bottom": "4.2.5",
     "@types/react-syntax-highlighter": "15.5.13",
     "@vidstack/react": "1.12.13",
+    "@yudiel/react-qr-scanner": "^2.6.0",
     "autosuggest-highlight": "3.3.4",
     "axios": "^1.18.1",
     "dayjs": "1.11.13",

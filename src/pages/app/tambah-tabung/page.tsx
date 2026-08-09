@@ -26,6 +26,8 @@ import axios from "@/api/axios";
 import { useNavigate } from "react-router-dom";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useUserContext } from "@/hooks/use-user";
+import NiCamera from "@/icons/nexture/ni-camera";
+import ScannerDialog from "@/components/dialog/scanner-dialog";
 
 export default function Page() {
   const { checkPermission } = useUserContext()
@@ -41,6 +43,7 @@ export default function Page() {
   const [photo, setPhoto] = useState<(any & { preview: string }[])>([]);
   const [errors, setErrors] = useState<Record<string, string[]>>()
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [scanPaused, setScanPaused] = useState(true)
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -151,6 +154,7 @@ export default function Page() {
 
   return (
     <Grid container spacing={5} className="w-full" size={12}>
+      <ScannerDialog scanPaused={scanPaused} setScanPaused={setScanPaused} setScanResult={setBarcode} />
       <Grid size={12} container spacing={2.5}>
         <Grid size={{ xs: 12, md: "grow" }}>
           <Typography variant="h1" component="h1" className="mb-0">
@@ -161,14 +165,14 @@ export default function Page() {
 
       <Grid size={12}>
         {errorMessage && (
-            <Box>
-              <Collapse in={true}>
-                <Alert className="mb-2" color="error" icon={<NiCrossSquare />} >
-                  {errorMessage}
-                </Alert>
-              </Collapse>
-            </Box>
-          )}
+          <Box>
+            <Collapse in={true}>
+              <Alert className="mb-2" color="error" icon={<NiCrossSquare />} >
+                {errorMessage}
+              </Alert>
+            </Collapse>
+          </Box>
+        )}
         <Box>
           <Card>
             <CardContent>
@@ -180,11 +184,22 @@ export default function Page() {
                     {errors != undefined && errors['number'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['number'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl className="outlined" variant="standard" size="small" fullWidth>
+                <Grid size={{ xs: 12, md: 6 }} className="flex gap-1 items-end">
+                  <FormControl className="outlined flex-1" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Barcode</FormLabel>
                     <Input placeholder="" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={isLoading} />
                     {errors != undefined && errors['barcode'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['barcode'][0]}</FormLabel>}
+                  </FormControl>
+                  <FormControl>
+                    <Button
+                      className="icon-only"
+                      size="large"
+                      color="primary"
+                      variant="contained"
+                      onClick={() => setScanPaused(!scanPaused)}
+                      startIcon={<NiCamera size={"large"} />}
+                      disabled={isLoading}
+                    />
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>

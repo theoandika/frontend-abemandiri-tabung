@@ -16,12 +16,6 @@ import {
   TextField,
   RadioGroup,
   Radio,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  useMediaQuery,
   Collapse,
   Alert,
   Chip,
@@ -29,8 +23,6 @@ import {
 } from "@mui/material";
 import ApiEndpoint from "@/api/api-endpoint"
 import { cn } from "@/lib/utils";
-import { useZxing } from 'react-zxing';
-import { useTheme } from '@mui/material/styles';
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
@@ -50,6 +42,7 @@ import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/db";
 import { useUserContext } from "@/hooks/use-user";
+import ScannerDialog from "@/components/dialog/scanner-dialog";
 
 export default function Page() {
   const { checkPermission } = useUserContext()
@@ -66,17 +59,11 @@ export default function Page() {
   const [nominal, setNominal] = useState("")
   const [document, setDocument] = useState<(any & { preview: string }[])>([]);
   const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>([])
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [deviceId, setDeviceId] = useState<string>("");
   const [scanPaused, setScanPaused] = useState(true)
-  const [scanResult, setScanResult] = useState<string>("")
   const [manualBarcode, setManualBarcode] = useState<string>("")
   const [errors, setErrors] = useState<Record<string, string[]>>()
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [errorBarcodes, setErrorBarcodes] = useState<{barcode: string, message: string}[]>([])
-
-  const theme = useTheme();
-  const fullScreenResponsive = useMediaQuery(theme.breakpoints.down("md"));
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -142,19 +129,11 @@ export default function Page() {
     return barcodes.findIndex(item => item.value === barcode) === -1 ? false : true
   }
 
-  const { ref } = useZxing({
-    deviceId: deviceId,
-    onDecodeResult(result) {
-      if (!checkBarcodeExists(result.rawValue)) {
-        setBarcodes(prev => [...prev, { id: crypto.randomUUID().toString(), value: result.rawValue }])
-        setScanResult(result.rawValue)
-      } else {
-        setScanResult("Barcode sudah ada")
-      }
-    },
-    paused: scanPaused,
-    timeBetweenDecodingAttempts: 3000
-  });
+  const setResult = (result: string) => {
+    if (!checkBarcodeExists(result)) {
+      setBarcodes(prev => [...prev, { id: crypto.randomUUID().toString(), value: result }])
+    }
+  }
 
   const getSiteOptions = () => {
     setIsLoading(true)
@@ -257,29 +236,9 @@ export default function Page() {
     setBarcodes([...barcodes.filter((item) => item.id !== id)])
   }
 
-  useEffect(() => {
-    if(!scanPaused) {
-      navigator.mediaDevices.getUserMedia({ audio: false, video: true })
-      .then(() => {
-        navigator.mediaDevices.enumerateDevices()
-        .then((availableDevices) => {          
-          const availableVideoDevices = availableDevices.filter(device => device.kind === 'videoinput');
-          if (availableVideoDevices.length === 0) {
-            console.log('no camera found');
-          } else if (availableVideoDevices.length === 1) {
-            setDevices(availableVideoDevices);
-            setDeviceId(availableVideoDevices[0].deviceId)
-          } else {
-            setDevices(availableVideoDevices);
-            setDeviceId(availableVideoDevices[0].deviceId)
-          }
-        })
-      })
-    }
-  }, [scanPaused]);
-
   return (
     <Grid container spacing={5} className="w-full" size={12}>
+      <ScannerDialog allowMultiple={true} scanPaused={scanPaused} setScanPaused={setScanPaused} setScanResult={setResult} />
       <Grid size={12} container spacing={2.5}>
         <Grid size={{ xs: 12, md: "grow" }}>
           <Typography variant="h1" component="h1" className="mb-0">
@@ -531,36 +490,6 @@ export default function Page() {
                       />
                     </Box>
                   </Box>
-                  <Dialog fullScreen={fullScreenResponsive} open={!scanPaused} onClose={() => setScanPaused(true)}>
-                    <DialogTitle>Scan Barcode</DialogTitle>
-                    <DialogContent>
-                      <DialogContentText className="mb-4 text-justify">
-                        Pilih kamera dengan kualitas terbaik agar proses scan lebih cepat
-                      </DialogContentText>
-                      <Box className="w-full flex flex-col gap-2">
-                        <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
-                          <Select
-                            value={deviceId}
-                            label="Kamera"
-                            onChange={(e: any) => setDeviceId(e.target.value)}
-                            IconComponent={NiChevronDownSmall}
-                            MenuProps={{ className: "outlined" }}
-                          >
-                            {devices.map((item, idx: any) => (
-                              <MenuItem key={idx} value={item.deviceId}>{item.label}</MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                        <video className="w-full" ref={ref} />
-                        <DialogContentText className="mt-2 text-center text-success">
-                          {scanResult}
-                        </DialogContentText>
-                      </Box>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={() => setScanPaused(true)}>Tutup</Button>
-                    </DialogActions>
-                  </Dialog>
                 </Box>
                 {barcodes.length > 0 && (
                   <Grid container spacing={2} className="mt-2">

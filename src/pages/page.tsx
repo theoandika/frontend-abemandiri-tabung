@@ -101,8 +101,8 @@ export default function Page() {
 
   const formik = useFormik({
     initialValues: {
-      email: "root@abemandiri.co.id",
-      password: "password",
+      email: "",
+      password: "",
     },
     validationSchema,
     onSubmit: submit,
