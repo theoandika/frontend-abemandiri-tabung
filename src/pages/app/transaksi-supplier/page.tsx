@@ -20,12 +20,14 @@ import {
   DataGrid,
   GridActionsCellItem,
   GridColDef,
+  gridFilteredSortedRowEntriesSelector,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
   QuickFilterClear,
   QuickFilterControl,
   Toolbar,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
@@ -53,6 +55,7 @@ import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailSupplierTransaction from "./detail";
 import { useUserContext } from "@/hooks/use-user";
+import * as XLSX from 'xlsx';
 
 interface Row {
   id: string
@@ -98,6 +101,7 @@ export default function Page() {
     };
   }, []);
 
+  const apiRef = useGridApiRef();
   const { checkPermission } = useUserContext()
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate()
@@ -151,6 +155,47 @@ export default function Page() {
       setErrorMessage(errData?.message)
     })
     .finally(() => setIsLoading(false))
+  }
+
+  const exportExcel = () => {
+    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
+    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
+    const dataExport = filteredRows.map(row => ({
+      Tanggal: dayjs(row.date).locale('id').format("DD MMMM YYYY H:mm"),
+      Cabang: row.site.name,
+      Supplier: row.supplier ? `${row.supplier.code} - ${row.supplier.name}` : '',
+      "Isi Ulang/Perbaikan": (() => {
+        switch (row.transaction_type) {
+          case "refill":
+            return "Isi Ulang";
+          case "filled":
+            return "Selesai Isi Ulang";
+          case "fixing":
+            return "Perbaikan";
+          case "fixed":
+            return "Selesai Perbaikan";
+          default:
+            return "";
+        }
+      })(),
+      Kondisi: (() => {
+        switch (row.tube_status) {
+          case "filled":
+            return "Isi";
+          case "empty":
+            return "Kosong";
+          case "broken":
+            return "Rusak";
+          default:
+            return "";
+        }
+      })(),
+      Tabung: row.items.length,
+    }));
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, "data_transaksi_supplier.xlsx");
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -301,6 +346,7 @@ export default function Page() {
                   color="grey"
                   variant="surface"
                   startIcon={<NiArrowInDown size={"medium"} />}
+                  onClick={exportExcel}
                 />
               </Tooltip>
 
@@ -370,6 +416,7 @@ export default function Page() {
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <Grid size={12}>
         <DataGrid
+          apiRef={apiRef}
           loading={isLoading}
           rows={rows}
           columns={columns}

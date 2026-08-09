@@ -3,8 +3,14 @@ const ApiEndpoint = {
   LOGIN: "auth/login",
   LOGOUT: "auth/logout",
 
+<<<<<<< HEAD
   // account
   ACCOUNT: "account/detail",
+=======
+    // account
+    ACCOUNT: 'account/detail',
+    CHANGE_PASSWORD: 'account/update-password',
+>>>>>>> e9a0dc9e55849f0ab6870abf54230be0ee9183fe
 
   // member
   MEMBER_ALL: "members",

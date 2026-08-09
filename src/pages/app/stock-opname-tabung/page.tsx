@@ -17,6 +17,7 @@ import {
   ColumnsPanelTrigger,
   DataGrid,
   GridColDef,
+  gridFilteredSortedRowEntriesSelector,
   GridRenderCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
@@ -24,6 +25,7 @@ import {
   QuickFilterClear,
   QuickFilterControl,
   Toolbar,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
@@ -47,6 +49,8 @@ import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import { useUserContext } from "@/hooks/use-user";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 
 interface Row {
   id: string
@@ -71,6 +75,21 @@ interface Row {
   adjust: boolean
 }
 
+interface DataExport {
+  Tanggal: string
+  Cabang: string
+  Nomor: string
+  Barcode: string
+  Isi: string
+  Jenis: string
+  Pemilik: string
+  Kondisi: string
+  Posisi: string
+  "Nama Posisi": string
+  Sesuai: string
+  Disesuaikan: string
+}
+
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
     type: "include",
@@ -88,6 +107,7 @@ export default function Page() {
     };
   }, []);
 
+  const apiRef = useGridApiRef();
   const { checkPermission } = useUserContext()
   const navigate = useNavigate()
   const [rows, setRows] = useState<Row[]>([]);
@@ -112,6 +132,29 @@ export default function Page() {
       getRows()
     }
   }, [])
+
+  const exportExcel = () => {
+    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
+    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
+    const dataExport: DataExport[] = filteredRows.map((row) => ({
+      Tanggal: dayjs(row.date).locale('id').format("DD MMMM YYYY HH:mm"),
+      Cabang: row.site.name,
+      Nomor: row.number,
+      Barcode: row.barcode || "",
+      Isi: `${row.tube_content.code} - ${row.tube_content.name}`,
+      Jenis: row.type === "medical" ? "Medis" : row.type === "industry" ? "Industri" : "",
+      Pemilik: row.tube_owner,
+      Kondisi: row.status === "filled" ? "Isi" : row.status === "empty" ? "Kosong" : row.status === "broken" ? "Rusak" : row.status === "expired" ? "Afkir" : row.status === "display" ? "Pajangan" : "",
+      Posisi: row.position === "site" ? "Cabang" : row.position === "supplier" ? "Supplier" : row.position === "member" ? "Member" : row.position === "transit" ? "Transit" : row.position === "unknown" ? "Tidak diketahui" : "",
+      "Nama Posisi": row.position_name,
+      Sesuai: row.match ? "Ya" : "Tidak",
+      Disesuaikan: row.adjust ? "Ya" : "Tidak",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    XLSX.writeFile(workbook, "laporan_stock_opname_tabung.xlsx");
+  }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
@@ -296,6 +339,17 @@ export default function Page() {
                   )}
                 />
               </Tooltip>
+
+              <Tooltip title="Download Excel">
+                <Button
+                  className="icon-only surface-standard flex-none"
+                  size="medium"
+                  color="grey"
+                  variant="surface"
+                  startIcon={<NiArrowInDown size={"medium"} />}
+                  onClick={exportExcel}
+                />
+              </Tooltip>
             </Grid>
           </Grid>
 
@@ -339,6 +393,7 @@ export default function Page() {
     <Grid container spacing={5}>
       <Grid size={12}>
         <DataGrid
+          apiRef={apiRef}
           loading={isLoading}
           rows={rows}
           columns={columns}
