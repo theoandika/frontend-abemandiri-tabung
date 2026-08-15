@@ -7,7 +7,7 @@ export const DEFAULTS = {
   themeColor: "theme-green" as ThemeVariant,
   themeMode: "system" as ModeVariant,
   contentType: ContentType.Fluid,
-  leftMenuType: MenuType.Minimal,
+  leftMenuType: MenuType.SingleLayer,
   leftMenuWidth: {
     [MenuType.Minimal]: { primary: 60, secondary: 260 },
     [MenuType.Comfort]: { primary: 116, secondary: 260 },

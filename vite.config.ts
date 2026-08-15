@@ -33,7 +33,7 @@ export default defineConfig({
           {
             urlPattern: ({ url }) => {
               return (
-                url.origin === 'http://localhost:8000' &&
+                url.origin === 'https://api-tabung.abemandiri.co.id' &&
                 url.pathname.startsWith('/api/v1')
               );
             },
