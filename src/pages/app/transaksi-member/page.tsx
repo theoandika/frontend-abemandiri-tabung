@@ -137,7 +137,7 @@ export default function Page() {
   }
 
   useEffect(() => {
-    if (!checkPermission([], ['view-supplier'])) {
+    if (!checkPermission([], ['view-transaction'])) {
       navigate('/404')
     } else {
       getRows()
