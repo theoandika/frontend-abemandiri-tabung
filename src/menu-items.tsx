@@ -173,6 +173,31 @@ export const leftMenuItems: MenuItem[] = [
     ]
   },
   {
+    id: "collateral",
+    icon: "NiShieldCheck",
+    label: "Jaminan",
+    color: "text-primary",
+    permissions: ["view-collateral","create-collateral"],
+    children: [
+      {
+        id: "collateral-list",
+        icon: "NiList",
+        label: "Daftar Jaminan",
+        color: "text-primary",
+        href: "/jaminan",
+        permissions: ["view-collateral"],
+      },
+      {
+        id: "add-collateral",
+        icon: "NiPlusSquare",
+        label: "Tambah Jaminan",
+        color: "text-primary",
+        href: "/tambah-jaminan",
+        permissions: ["create-collateral"],
+      }
+    ]
+  },
+  {
     id: "supplier-transaction",
     icon: "NiCartEmpty",
     label: "Transaksi Supplier",

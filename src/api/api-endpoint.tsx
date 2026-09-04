@@ -56,6 +56,9 @@ const ApiEndpoint = {
   // user
   USER: "users",
   USER_INDEX: "users/index",
+
+  // collateral
+  COLLATERAL: "collaterals",
 };
 
 export default ApiEndpoint;
