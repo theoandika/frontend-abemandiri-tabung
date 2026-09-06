@@ -122,11 +122,13 @@ export default function DetailCollateral({ data, onBack }: DialogProps) {
       field: "nominal",
       headerName: "Jaminan",
       editable: false,
+      valueGetter: (_, row) => rupiah(row.nominal),
     },
     {
       field: "total_amount",
       headerName: "Total",
       editable: false,
+      valueGetter: (_, row) => rupiah(row.total_amount),
     },
   ];
 
