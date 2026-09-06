@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   Alert,
-  Box,
   Button,
   Collapse,
   FilledInput,
@@ -22,7 +21,6 @@ import {
   GridActionsCellItem,
   GridColDef,
   gridFilteredSortedRowEntriesSelector,
-  GridRenderCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
   QuickFilter,
@@ -32,8 +30,6 @@ import {
   useGridApiRef,
 } from "@mui/x-data-grid";
 
-// import DataGridInput from "@/components/data-grid/data-grid-input";
-// import { DataGridPaginationFullPage } from "@/components/data-grid/data-grid-pagination";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
 import NiArrowInDown from "@/icons/nexture/ni-arrow-in-down";
 import NiArrowUp from "@/icons/nexture/ni-arrow-up";
@@ -49,59 +45,83 @@ import NiFilter from "@/icons/nexture/ni-filter";
 import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
 import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
-import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import { cn } from "@/lib/utils";
 import dayjs from "dayjs";
 import 'dayjs/locale/id'
 
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
-import NiBarcode from "@/icons/nexture/ni-barcode";
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
-import NiCrossFull from "@/icons/nexture/ni-cross-full";
-import NiCheckFull from "@/icons/nexture/ni-check-full";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
-import DetailTube from "./detail";
 import { useUserContext } from "@/hooks/use-user";
 import * as XLSX from 'xlsx';
+import NiPrinter from "@/icons/nexture/ni-printer";
+import { rupiah } from "@/hooks/rupiah";
+import DetailCollateral from "./detail";
 
 interface Row {
   id: string,
+  date: string,
   site: {
     id: string,
     name: string
   },
-  number: string,
-  barcode?: string,
-  tube_content: {
+  member: {
     id: string,
     code: string,
     name: string
   },
   type: string,
-  own: boolean,
-  active: boolean,
-  status: string,
-  position: string,
-  second_owner?: {
+  pic: string,
+  document_number: string | null,
+  member_name: string,
+  member_address: string | null,
+  signatory_status: string | null,
+  company_name: string | null,
+  contact_person: string | null,
+  payment_method: string | null,
+  payment_date: string | null,
+  return_payment_method: string | null,
+  return_payment_date: string | null,
+  collateral_audit: string | null,
+  return_audit: string | null,
+  document: string | null,
+  collateral_items: CollateralItem[],
+  total_quantity: number,
+  total_nominal: number,
+  generated_document: string,
+};
+
+interface CollateralItem {
+  id: string,
+  tube_content_type: {
     id: string,
     code: string,
     name: string
   },
-  photo?: string
-};
+  klep_condition: string | null,
+  tube_cap: string | null,
+  tube_quantity: number,
+  nominal: number,
+  total_amount: number
+}
 
 interface DataExport {
-  Nomor: string
-  Barcode: string
-  Isi: string
+  Tanggal: string
+  "No. Nota": string
+  Cabang: string
+  Member: string
+  Tabung: number
+  "Total Jaminan": string
   Jenis: string
-  Pemilik: string
-  Posisi: string
-  Kondisi: string
-  Aktif: string
+  "Pembayaran Jaminan": string
+  "Tanggal Bayar Jaminan": string
+  "Pembayaran Pengembalian Jaminan": string
+  "Tanggal Bayar Pengembalian Jaminan": string
+  "Audit Jaminan": string
+  "Audit Pengembalian": string
 }
 
 export default function Page() {
@@ -130,17 +150,23 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [openDetail, setOpenDetail] = useState<boolean>(false)
-  const [activeData, setActiveData] = useState<Row>()
+  const [activeData, setActiveData] = useState<Row | null>(null)
 
   const getRows = () => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.TUBE_INDEX)
+    axios.get(ApiEndpoint.COLLATERAL)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
     })
     .finally(() => {
       setIsLoading(false)
+      setTimeout(() => {
+        apiRef.current?.autosizeColumns({
+          includeOutliers: true,
+          includeHeaders: true,
+        })
+      }, 100)
     })
   }
 
@@ -159,7 +185,7 @@ export default function Page() {
 
   const deleteRow = () => {
     setIsLoading(true)
-    axios.delete(ApiEndpoint.CREATE_TUBE + "/" + deleteId)
+    axios.delete(ApiEndpoint.COLLATERAL + "/" + deleteId)
     .then (() => {
       getRows()
     })
@@ -170,42 +196,32 @@ export default function Page() {
     .finally(() => setIsLoading(false))
   }
 
-  const activate = (id: string) => {
-    axios.get(ApiEndpoint.CREATE_TUBE + "/" + id + "/activate")
-    .then (() => {
-      getRows()
-    })
-  }
-
-  const deactivate = (id: string) => {
-    axios.get(ApiEndpoint.CREATE_TUBE + "/" + id + "/deactivate")
-    .then (() => {
-      getRows()
-    })
-  }
-
-  const doOpenDetail = (data: Row) => {
-    setActiveData(data)
-    setOpenDetail(true)
+  const openGeneratedDocument = (url: string) => {
+    window.open(url, '_blank')?.focus()
   }
 
   const exportExcel = () => {
     const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
     const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
     const dataExport: DataExport[] = filteredRows.map((row) => ({
-      Nomor: row.number,
-      Barcode: row.barcode || "",
-      Isi: `${row.tube_content.code} - ${row.tube_content.name}`,
-      Jenis: row.type === "medical" ? "Medis" : row.type === "industry" ? "Industri" : "",
-      Pemilik: row.own ? "Tabung DM" : row.second_owner ? `Member (${row.second_owner.code} - ${row.second_owner.name})` : "",
-      Posisi: row.position === "site" ? "Cabang" : row.position === "supplier" ? "Supplier" : row.position === "member" ? "Member" : row.position === "transit" ? "Transit" : row.position === "unknown" ? "Tidak diketahui" : "",
-      Kondisi: row.status === "filled" ? "Isi" : row.status === "empty" ? "Kosong" : row.status === "broken" ? "Rusak" : row.status === "expired" ? "Afkir" : row.status === "display" ? "Pajangan" : row.status === "unknown" ? "Tidak diketahui" : "",
-      Aktif: row.active ? "Ya" : "Tidak",
+      Tanggal: dayjs(row.date).locale('id').format("YYYY/MM/DD"),
+      "No. Nota": row.document_number || "",
+      Cabang: row.site.name,
+      Member: `${row.member.code} - ${row.member.name}`,
+      Tabung: row.total_quantity,
+      "Total Jaminan": row.total_nominal,
+      Jenis: row.type === "collateral" ? "Surat Jaminan" : "Pengembalian",
+      "Pembayaran Jaminan": row.payment_method || "",
+      "Tanggal Bayar Jaminan": row.payment_date ? dayjs(row.payment_date).locale('id').format("YYYY/MM/DD") : "",
+      "Pembayaran Pengembalian Jaminan": row.return_payment_method || "",
+      "Tanggal Bayar Pengembalian Jaminan": row.return_payment_date ? dayjs(row.return_payment_date).locale('id').format("YYYY/MM/DD") : "",
+      "Audit Jaminan": row.collateral_audit || "",
+      "Audit Pengembalian": row.return_audit || "",
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    XLSX.writeFile(workbook, "data_tabung.xlsx");
+    XLSX.writeFile(workbook, "data_jaminan.xlsx");
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -213,24 +229,44 @@ export default function Page() {
     {
       field: "date",
       headerName: "Tanggal",
-      width: 170,
+      width: 150,
       editable: false,
       type: "date",
       valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY")
     },
     {
+      field: "document_number",
+      headerName: "No. Nota",
+      width: 100,
+      editable: false,
+    },
+    {
       field: "site",
-      headerName: "Barcode",
-      width: 200,
+      headerName: "Cabang",
+      width: 150,
       editable: false,
       valueGetter: (_, row) => row.site.name,
     },
     {
-      field: "tube_content",
-      headerName: "Isi",
+      field: "member",
+      headerName: "Member",
+      width: 150,
+      editable: false,
+      valueGetter: (_, row) => `${row.member.code} - ${row.member.name}`,
+    },
+    {
+      field: "total_quantity",
+      headerName: "Tabung",
       width: 100,
       editable: false,
-      valueGetter: (_, row) => `${row.tube_content.code} - ${row.tube_content.name}`,
+    },
+    {
+      field: "total_nominal",
+      headerName: "Total Jaminan",
+      width: 120,
+      editable: false,
+      type: "number",
+      valueGetter: (_, row) => rupiah(row.total_nominal),
     },
     {
       field: "type",
@@ -239,117 +275,59 @@ export default function Page() {
       editable: false,
       type: "singleSelect",
       valueOptions: [
-        { value: "medical", label: 'Medis' },
-        { value: "industry", label: 'Industri' },
+        { value: "collateral", label: 'Surat Jaminan' },
+        { value: "return", label: 'Pengembalian' },
       ],
       valueFormatter: (value) => {
         switch (value) {
-          case "medical":
-            return "Medis";
-          case "industry":
-            return "Industri";
+          case "collateral":
+            return "Surat Jaminan";
+          case "return":
+            return "Pengembalian";
           default:
             return "";
         }
       },
     },
     {
-      field: "own",
-      headerName: "Tabung DM",
+      field: "payment_method",
+      headerName: "Pembayaran Jaminan",
       width: 100,
-      align: "left",
-      headerAlign: "left",
       editable: false,
-      type: "boolean",
-      renderCell: (params: GridRenderCellParams<any, boolean>) => {
-        const value = params.value;
-        return (
-          <Box>
-            {value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />}
-          </Box>
-        )
-      },
     },
     {
-      field: "position",
-      headerName: "Posisi Tabung",
-      width: 100,
+      field: "payment_date",
+      headerName: "Tanggal Bayar Jaminan",
+      width: 150,
       editable: false,
-      type: "singleSelect",
-      valueOptions: [
-        { value: "site", label: 'Cabang' },
-        { value: "supplier", label: 'Supplier' },
-        { value: "member", label: 'Member' },
-        { value: "transit", label: 'Transit' },
-        { value: "unknown", label: 'Tidak diketahui' },
-      ],
-      valueFormatter: (value) => {
-        switch (value) {
-          case "site":
-            return "Cabang";
-          case "supplier":
-            return "Supplier";
-          case "member":
-            return "Member";
-          case "transit":
-            return "Transit";
-          case "unknown":
-            return "Tidak diketahui";
-          default:
-            return "";
-        }
-      },
+      type: "date",
+      valueFormatter: (value) => value ? dayjs(value).locale('id').format("DD MMMM YYYY") : "",
     },
     {
-      field: "status",
-      headerName: "Kondisi",
+      field: "return_payment_method",
+      headerName: "Pembayaran Pengembalian Jaminan",
       width: 100,
       editable: false,
-      type: "singleSelect",
-      valueOptions: [
-        { value: "filled", label: 'Isi' },
-        { value: "empty", label: 'Kosong' },
-        { value: "broken", label: 'Rusak' },
-        { value: "expired", label: 'Afkir' },
-        { value: "display", label: 'Pajangan' },
-        { value: "unknown", label: 'Tidak diketahui' },
-      ],
-      renderCell: (params: GridRenderCellParams<any, string>) => {
-        const value = params.value;
-        switch (value) {
-          case "filled":
-            return "Isi"
-          case "empty":
-            return "Kosong"
-          case "broken":
-            return "Rusak"
-          case "expired":
-            return "Afkir"
-          case "display":
-            return "Pajangan"
-          case "unknown":
-            return "Tidak diketahui"
-          default:
-            return ""
-        }
-      },
     },
     {
-      field: "active",
-      headerName: "Aktif",
-      width: 100,
-      align: "left",
-      headerAlign: "left",
+      field: "return_payment_date",
+      headerName: "Tanggal Bayar Pengembalian Jaminan",
+      width: 150,
       editable: false,
-      type: "boolean",
-      renderCell: (params: GridRenderCellParams<any, boolean>) => {
-        const value = params.value;
-        if (typeof value !== undefined) {
-          return value ? <NiCheckSquare className="text-success" /> : <NiCrossSquare className="text-error" />;
-        } else {
-          return <Box></Box>;
-        }
-      },
+      type: "date",
+      valueFormatter: (value) => value ? dayjs(value).locale('id').format("DD MMMM YYYY") : "",
+    },
+    {
+      field: "collateral_audit",
+      headerName: "Audit Jaminan",
+      width: 100,
+      editable: false,
+    },
+    {
+      field: "return_audit",
+      headerName: "Audit Pengembalian",
+      width: 100,
+      editable: false,
     },
     {
       field: "actions",
@@ -368,24 +346,43 @@ export default function Page() {
             onClick={() => doOpenDetail(params.row)}
             showInMenu
           />,
-          checkPermission([], ['delete-tube']) ? <GridActionsCellItem
+          checkPermission([], ['delete-collateral']) ? <GridActionsCellItem
             key={1}
             icon={<NiCrossSquare size="medium" />}
             label="Hapus"
             onClick={() => doDelete(params.row.id)}
             showInMenu
           /> : <></>,
-          checkPermission([], ['update-tube']) ? <GridActionsCellItem
+          checkPermission([], ['update-collateral']) ? <GridActionsCellItem
             key={2}
             icon={<NiPenSquare size="medium" />}
             label="Ubah"
-            onClick={() => navigate("/ubah-tabung/" + params.row.id)}
+            onClick={() => navigate("/ubah-jaminan/" + params.row.id)}
             showInMenu
           /> : <></>,
+          <GridActionsCellItem
+            key={0}
+            icon={<NiPrinter size="medium" />}
+            label="Print"
+            onClick={() => openGeneratedDocument(params.row.generated_document)}
+            showInMenu
+          />,
         ]
       }
     },
   ];
+
+  const doOpenDetail = (data: Row) => {
+    setActiveData(data)
+    setOpenDetail(true)
+  }
+
+  const doBack = () => {
+    setActiveData(null)
+    setOpenDetail(false)
+  }
+
+  if (openDetail && activeData) return <DetailCollateral data={activeData} onBack={doBack} />
 
   function CustomToolbar() {
     return (
@@ -490,7 +487,6 @@ export default function Page() {
   return (
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
-      {/* <DetailTube openDialog={openDetail} setOpenDialog={setOpenDetail} data={activeData} /> */}
       <Grid size={12}>
         <DataGrid
           apiRef={apiRef}
@@ -499,6 +495,10 @@ export default function Page() {
           columns={columns}
           initialState={{
             columns: { columnVisibilityModel: { id: false } },
+          }}
+          autosizeOptions={{
+            includeOutliers: true,
+            includeHeaders: true,
           }}
           getRowSpacing={getRowSpacing}
           rowHeight={68}

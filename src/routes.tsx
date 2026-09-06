@@ -13,7 +13,8 @@ import UbahJenisIsi from "@/pages/app/jenis-isi/ubah";
 import UbahTabung from "@/pages/app/tabung/ubah";
 import UbahRole from "@/pages/app/role/ubah";
 import UbahUser from "@/pages/app/user/ubah";
-import GantiPassword from "./pages/app/ganti-password/page";
+import GantiPassword from "@/pages/app/ganti-password/page";
+import UbahJaminan from "@/pages/app/jaminan/ubah";
 
 // Statically import all possible pages for build
 const modules = import.meta.glob("./pages/**/page.tsx");
@@ -88,6 +89,7 @@ const AppRoutes = () => {
         <Route path="/ubah-role/:id" element={<UbahRole />} />
         <Route path="/ubah-user/:id" element={<UbahUser />} />
         <Route path="/ganti-password" element={<GantiPassword />} />
+        <Route path="/ubah-jaminan/:id" element={<UbahJaminan />} />
       </Route>
 
       {/* 404 route */}

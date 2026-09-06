@@ -19,44 +19,59 @@ import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
 import NiSearch from "@/icons/nexture/ni-search";
 import NiArrowLeft from "@/icons/nexture/ni-arrow-left";
 
-interface Item {
-  id: string
-  number: string
-  barcode: string
-  tube_content_type: {
-    id: string
-    code: string
-    name: string
-  }
-  tube_owner: "DM" | "Non DM"
-}
-
-interface DataType {
-  id: string
+interface Row {
+  id: string,
+  date: string,
   site: {
-    id: string
-    name: string
-  }
-  member?: {
-    id: string
-    code: string
+    id: string,
     name: string
   },
-  date: string
-  transaction_type: "in" | "out" | "return" | "sell"
-  tube_status: "filled" | "empty" | "broken" | "expired" | "display"
-	note: string
-  nominal?: number
-  document?: string
-  items: Item[],
+  member: {
+    id: string,
+    code: string,
+    name: string
+  },
+  type: string,
+  pic: string,
+  document_number: string | null,
+  member_name: string,
+  member_address: string | null,
+  signatory_status: string | null,
+  company_name: string | null,
+  contact_person: string | null,
+  payment_method: string | null,
+  payment_date: string | null,
+  return_payment_method: string | null,
+  return_payment_date: string | null,
+  collateral_audit: string | null,
+  return_audit: string | null,
+  document: string | null,
+  collateral_items: CollateralItem[],
+  total_quantity: number,
+  total_nominal: number,
+  generated_document: string,
 };
 
+interface CollateralItem {
+  id: string,
+  tube_content_type: {
+    id: string,
+    code: string,
+    name: string
+  },
+  klep_condition: string | null,
+  tube_cap: string | null,
+  tube_quantity: number,
+  nominal: number,
+  total_amount: number
+}
+
 interface DialogProps {
-	data?: DataType
+	data?: Row
   onBack: () => void
 }
 
-export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
+export default function DetailCollateral({ data, onBack }: DialogProps) {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
     type: "include",
     ids: new Set(),
@@ -73,41 +88,44 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
     };
   }, []);
 
-  const [rows, setRows] = useState<Item[]>([]);
+  const [rows, setRows] = useState<CollateralItem[]>([]);
   const apiRef = useGridApiRef();
 
   useEffect(() => {
-    data?.items && setRows(data?.items)
+    data?.collateral_items && setRows(data?.collateral_items)
   }, [])
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
-      field: "date",
-      headerName: "Tanggal",
-      editable: false,
-      type: "dateTime",
-      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
-    },
-    {
-      field: "number",
-      headerName: "Nomor",
-      editable: false,
-    },
-    {
-      field: "barcode",
-      headerName: "Barcode",
-      editable: false,
-    },
-    {
       field: "tube_content_type",
       headerName: "Isi",
       editable: false,
-      valueGetter: (_, row) => `${row.tube_content_type.code} - ${row.tube_content_type.name}`
+      valueGetter: (_, row) => `${row.tube_content_type.code} - ${row.tube_content_type.name}`,
     },
     {
-      field: "tube_owner",
-      headerName: "Pemilik",
+      field: "klep_condition",
+      headerName: "Kondisi Klep",
+      editable: false,
+    },
+    {
+      field: "tube_cap",
+      headerName: "Tutup Tabung",
+      editable: false,
+    },
+    {
+      field: "tube_quantity",
+      headerName: "Qty",
+      editable: false,
+    },
+    {
+      field: "nominal",
+      headerName: "Jaminan",
+      editable: false,
+    },
+    {
+      field: "total_amount",
+      headerName: "Total",
       editable: false,
     },
   ];
@@ -127,7 +145,7 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
             />
           </Tooltip>
           <Typography variant="h1" component="h1" className="mb-0">
-            Transaksi Member
+            {data?.type == 'collateral' ? 'Detail Jaminan' : 'Detail Pengembalian'}
           </Typography>
         </Box>
       </Grid>
@@ -139,7 +157,13 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
                 Tanggal :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
-                {dayjs(data?.date).locale('id').format("DD MMMM YYYY HH:mm")}
+                {dayjs(data?.date).locale('id').format("DD MMMM YYYY")}
+              </Grid>
+              <Grid size={{ xs: 6, md: 4}}>
+                No. Nota :
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {data?.document_number}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
                 Cabang :
@@ -148,54 +172,125 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
                 {data?.site.name}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
+                Tipe Dokumen :
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {data?.type == 'collateral' && 'Surat Jaminan'}
+                {data?.type == 'return' && 'Pengembalian'}
+              </Grid>
+              <Grid size={{ xs: 6, md: 4}}>
+                PIC :
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {data?.pic}
+              </Grid>
+              <Grid size={{ xs: 6, md: 4}}>
                 Member :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
                 {data?.member?.code} - {data?.member?.name}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
-                Masuk/Keluar :
+                Nama :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
-                {data?.transaction_type == 'in' && 'Masuk'}
-                {data?.transaction_type == 'out' && 'Keluar'}
-                {data?.transaction_type == 'return' && 'Retur'}
-                {data?.transaction_type == 'sell' && 'Jual'}
+                {data?.member_name}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
-                Kondisi :
+                Alamat :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
-                {data?.tube_status == 'empty' && 'Kosong'}
-                {data?.tube_status == 'filled' && 'Isi'}
-                {data?.tube_status == 'broken' && 'Rusak'}
-                {data?.tube_status == 'expired' && 'Afkir'}
-                {data?.tube_status == 'display' && 'Pajangan'}
+                {data?.member_address}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
-                Catatan :
+                Status Penandatangan :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
-                {data?.note}
+                {data?.signatory_status}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
-                Nominal Jaminan :
+                Nama Usaha :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
-                {data?.nominal ? rupiah(data?.nominal) : <Chip label="Tidak ada" variant="filled" color="grey" />}
+                {data?.company_name}
               </Grid>
               <Grid size={{ xs: 6, md: 4}}>
-                Dokumen Jaminan :
+                No. Kontak :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
-                {data?.document ? (
+                {data?.contact_person}
+              </Grid>
+              {data?.type == 'collateral' && (
+                <>
+                  <Grid size={{ xs: 6, md: 4}}>
+                    Pembayaran Jaminan :
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 8}}>
+                    {data?.payment_method}
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 4}}>
+                    Tanggal Bayar Jaminan :
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 8}}>
+                    {dayjs(data?.payment_date).locale('id').format("DD MMMM YYYY")}
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 4}}>
+                    Surat Peminjaman Perusahaan :
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 8}}>
+                    {data?.document ? (
+                      <Button
+                        className="surface-standard"
+                        size="small"
+                        color="info"
+                        variant="pastel"
+                        startIcon={<NiDocumentFull size={"small"} />}
+                        onClick={() => window.open(data?.document ?? "", '_blank')?.focus()}
+                      >Lihat</Button>
+                    ) : <Chip label="Tidak ada" variant="filled" color="grey" />}
+                  </Grid>
+                </>
+              )}
+              {data?.type == 'return' && (
+                <>
+                  <Grid size={{ xs: 6, md: 4}}>
+                    Pembayaran Pengembalian :
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 8}}>
+                    {data?.return_payment_method}
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 4}}>
+                    Tanggal Bayar Pengembalian :
+                  </Grid>
+                  <Grid size={{ xs: 6, md: 8}}>
+                    {dayjs(data?.return_payment_date).locale('id').format("DD MMMM YYYY")}
+                  </Grid>
+                </>
+              )}
+              <Grid size={{ xs: 6, md: 4}}>
+                Jumlah Tabung :
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {data?.total_quantity}
+              </Grid>
+              <Grid size={{ xs: 6, md: 4}}>
+                Total Jaminan :
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {rupiah(data?.total_nominal ?? 0)}
+              </Grid>
+              <Grid size={{ xs: 6, md: 4}}>
+                {data?.type == 'collateral' ? 'Print Jaminan' : 'Print Pengembalian'}
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {data?.generated_document ? (
                   <Button
                     className="surface-standard"
                     size="small"
                     color="info"
                     variant="pastel"
                     startIcon={<NiDocumentFull size={"small"} />}
-                    onClick={() => window.open(data?.document, '_blank')?.focus()}
+                    onClick={() => window.open(data?.generated_document ?? "", '_blank')?.focus()}
                   >Lihat</Button>
                 ) : <Chip label="Tidak ada" variant="filled" color="grey" />}
               </Grid>
@@ -216,7 +311,6 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
           autosizeOptions={{
             includeOutliers: true,
             includeHeaders: true,
-            expand: true
           }}
           getRowSpacing={getRowSpacing}
           rowHeight={68}
