@@ -43,6 +43,7 @@ interface DataType {
   date: string
   transaction_type: "refill" | "filled" | "fixing" | "fixed"
   tube_status: "filled" | "empty" | "broken",
+  note: string
   items: Item[],
 };
 
@@ -164,6 +165,12 @@ export default function DetailSupplierTransaction({ data, onBack }: DialogProps)
                 {data?.tube_status == 'empty' && 'Kosong'}
                 {data?.tube_status == 'filled' && 'Isi'}
                 {data?.tube_status == 'broken' && 'Rusak'}
+              </Grid>
+              <Grid size={{ xs: 6, md: 4}}>
+                Catatan :
+              </Grid>
+              <Grid size={{ xs: 6, md: 8}}>
+                {data?.note}
               </Grid>
             </Grid>
           </CardContent>

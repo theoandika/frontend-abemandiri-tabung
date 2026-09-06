@@ -72,8 +72,6 @@ interface Row {
   transaction_type: "in" | "out" | "return" | "sell"
   tube_status: "filled" | "empty" | "broken" | "expired" | "display"
   note: string
-  nominal?: number
-  document?: string
   items: {
     id: string
     number: string
