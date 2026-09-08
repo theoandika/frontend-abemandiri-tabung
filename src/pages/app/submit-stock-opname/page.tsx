@@ -1,18 +1,12 @@
 import ApiEndpoint from "@/api/api-endpoint";
-import DialogYesNo from "@/components/dialog/dialog-yes-no";
 import { useUserContext } from "@/hooks/use-user";
-import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import NiCalendar from "@/icons/nexture/ni-calendar";
-import NiCheck from "@/icons/nexture/ni-check";
-import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
 import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NiCross from "@/icons/nexture/ni-cross";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
-import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
-import NiPen from "@/icons/nexture/ni-pen";
-import { Box, Button, Card, CardContent, Typography, Grid, Select, MenuItem, FormControl, FormLabel, FormControlLabel, Alert, Radio, RadioGroup } from "@mui/material";
+import { Box, Button, Card, CardContent, Typography, Grid, Select, MenuItem, FormControl, FormLabel, Alert, Input } from "@mui/material";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import axios from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -21,48 +15,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
-interface TubeList {
-  id: string
-  number: string
-  barcode: string
-  site: {
-    id: string
-    name: string
-  }
-  position: string
-  tube_status: string
-  own: boolean
-  second_owner: {
-    id: string
-    code: string
-    name: string
-  } | null
-}
-
-interface TubeSubmit {
-  original_data: TubeList
-  id: string
-  is_match: boolean | undefined
-  adjust: boolean | undefined
-  tube_status: string | undefined
-  position: string | undefined
-  position_id: string | undefined
-  supplier_transaction_type: string | undefined
-}
+import NiPlus from "@/icons/nexture/ni-plus";
 
 interface Site {
   id: string
   name: string
 }
 
-interface Member {
-  id: string
-  code: string
-  name: string
-}
-
-interface Supplier {
+interface ContentType {
   id: string
   code: string
   name: string
@@ -75,56 +35,12 @@ export default function DetailMemberTransaction() {
   const [date, setDate] = useState<Dayjs>(dayjs())
   const [site, setSite] = useState<string>("")
   const [siteOptions, setSiteOptions] = useState<Site[]>([])
+  const [contentTypeOptions, setContentTypeOptions] = useState<ContentType[]>([])
   const [contentType, setContentType] = useState<string>("")
   const [pic, setPic] = useState<string>("")
   const [tubeStatus, setTubeStatus] = useState<string>("")
-  const [memberOptions, setMemberOptions] = useState<Member[]>([])
-  const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([])
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [errorMessage, setErrorMessage] = useState<string>("")
-
-  const tubeStatusOptions = [
-    {
-      label: "Isi",
-      value: "filled"
-    },
-    {
-      label: "Kosong",
-      value: "empty"
-    },
-    {
-      label: "Rusak",
-      value: "broken"
-    },
-    {
-      label: "Afkir",
-      value: "expired"
-    },
-    {
-      label: "Pajangan",
-      value: "display"
-    },
-  ]
-
-  const positionOptions = [
-    {
-      label: "Cabang",
-      value: "site"
-    },
-    {
-      label: "Member",
-      value: "member"
-    },
-    {
-      label: "Supplier",
-      value: "supplier"
-    },
-    {
-      label: "Transit",
-      value: "transit"
-    },
-  ]
 
   const getSiteOptions = () => {
     axios.get(ApiEndpoint.SITE_ALL)
@@ -136,20 +52,10 @@ export default function DetailMemberTransaction() {
     })
   }
 
-  const getMemberOptions = () => {
-    axios.get(ApiEndpoint.MEMBER_ALL)
+  const getContentTypeOptions = () => {
+    axios.get(ApiEndpoint.TUBE_CONTENT_ALL)
     .then(res => {
-      setMemberOptions(res?.data?.data)
-    })
-    .finally(() => {
-      setIsLoading(false)
-    })
-  }
-
-  const getSupplierOptions = () => {
-    axios.get(ApiEndpoint.SUPPLIER)
-    .then(res => {
-      setSupplierOptions(res?.data?.data)
+      setContentTypeOptions(res?.data?.data)
     })
     .finally(() => {
       setIsLoading(false)
@@ -161,8 +67,7 @@ export default function DetailMemberTransaction() {
       navigate('/404')
     } else {
       getSiteOptions()
-      getMemberOptions()
-      getSupplierOptions()
+      getContentTypeOptions()
     }
   }, [])
 
@@ -251,7 +156,63 @@ export default function DetailMemberTransaction() {
                   {errors != undefined && errors['site'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['site'][0]}</FormLabel>}
                 </FormControl>
               </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                  <FormLabel component="label">Isi Tabung *</FormLabel>
+                  <Select
+                    value={contentType}
+                    label="Cabang"
+                    onChange={(e: any) => setContentType(e.target.value)}
+                    IconComponent={NiChevronDownSmall}
+                    MenuProps={{ className: "outlined" }}
+                    disabled={isLoading}
+                  >
+                    {contentTypeOptions.map((item: ContentType, idx: any) => (
+                      <MenuItem key={idx} value={item?.id}>{item?.code} - {item?.name}</MenuItem>
+                    ))}
+                  </Select>
+                  {errors != undefined && errors['content'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['content'][0]}</FormLabel>}
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl className="outlined" variant="standard" size="small" fullWidth>
+                  <FormLabel component="label">PIC Opname</FormLabel>
+                  <Input value={pic} placeholder="" onChange={(e: any) => setPic(e.target.value)} disabled={isLoading} />
+                  {errors != undefined && errors['pic'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['pic'][0]}</FormLabel>}
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                  <FormLabel component="label">Kondisi Tabung *</FormLabel>
+                  <Select
+                    value={tubeStatus}
+                    label="Cabang"
+                    onChange={(e: any) => setTubeStatus(e.target.value)}
+                    IconComponent={NiChevronDownSmall}
+                    MenuProps={{ className: "outlined" }}
+                    disabled={isLoading}
+                  >
+                    <MenuItem value="filled">Isi</MenuItem>
+                    <MenuItem value="empty">Kosong</MenuItem>
+                    <MenuItem value="broken">Rusak</MenuItem>
+                    <MenuItem value="expired">Afkir</MenuItem>
+                    <MenuItem value="display">Pajangan</MenuItem>
+                  </Select>
+                  {errors != undefined && errors['tube_status'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['tube_status'][0]}</FormLabel>}
+                </FormControl>
+              </Grid>
             </Grid>
+            <Box className="w-full flex justify-end">
+              <Button
+                size="large"
+                startIcon={<NiPlus />}
+                loading={isLoading}
+                loadingPosition="start"
+                variant="pastel"
+                color="primary"
+                onClick={() => save()}
+              >Buat</Button>
+            </Box>
           </CardContent>
         </Card>
       </Grid>
