@@ -256,7 +256,7 @@ export default function Page() {
     },
     {
       field: "position",
-      headerName: "Posisi Tabung",
+      headerName: "Lokasi",
       width: 100,
       editable: false,
       type: "singleSelect",
@@ -286,7 +286,7 @@ export default function Page() {
     },
     {
       field: "position_name",
-      headerName: "Nama Posisi",
+      headerName: "Nama Lokasi",
       width: 100,
       editable: false,
     },

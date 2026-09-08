@@ -57,6 +57,10 @@ interface Row {
   date: string
   number: string
   barcode: string
+  site: {
+    id: string
+    name: string
+  }
   content: {
     id: string
     code: string
@@ -208,6 +212,13 @@ export default function Page() {
       editable: false,
     },
     {
+      field: "site",
+      headerName: "Cabang",
+      width: 100,
+      editable: false,
+      valueGetter: (_, row) => `${row.site.name}`,
+    },
+    {
       field: "content",
       headerName: "Isi",
       editable: false,
@@ -285,7 +296,7 @@ export default function Page() {
     },
     {
       field: "position",
-      headerName: "Posisi",
+      headerName: "Lokasi",
       width: 100,
       editable: false,
       type: "singleSelect",
@@ -315,7 +326,7 @@ export default function Page() {
     },
     {
       field: "position_name",
-      headerName: "Nama Posisi",
+      headerName: "Nama Lokasi",
       editable: false,
       width: 150,
     },
