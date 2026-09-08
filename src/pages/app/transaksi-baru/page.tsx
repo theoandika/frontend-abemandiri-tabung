@@ -28,7 +28,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
 import axios from "@/api/axios";
-import { useDropzone } from "react-dropzone";
+// import { useDropzone } from "react-dropzone";
 
 import NiFloppyDisk from "@/icons/nexture/ni-floppy-disk";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
@@ -37,7 +37,7 @@ import NiCalendar from "@/icons/nexture/ni-calendar";
 import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NiCamera from "@/icons/nexture/ni-camera";
-import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
+// import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/db";
@@ -56,8 +56,8 @@ export default function Page() {
   const [transactionType, setTransactionType] = useState("")
   const [tubeStatus, setTubeStatus] = useState("")
   const [note, setNote] = useState("")
-  const [nominal, setNominal] = useState("")
-  const [document, setDocument] = useState<(any & { preview: string }[])>([]);
+  // const [nominal, setNominal] = useState("")
+  // const [document, setDocument] = useState<(any & { preview: string }[])>([]);
   const [barcodes, setBarcodes] = useState<{id: string, value: string}[]>([])
   const [scanPaused, setScanPaused] = useState(true)
   const [manualBarcode, setManualBarcode] = useState<string>("")
@@ -81,49 +81,49 @@ export default function Page() {
   //   },
   // });
 
-  const handleRemoveImage = () => {
-    setDocument([]);
-  };
+  // const handleRemoveImage = () => {
+  //   setDocument([]);
+  // };
 
-  const thumbs = document.map((file: any) => (
-    <Box
-      key={file.name}
-      className="bg-grey-25 flex-non flex w-full cursor-default flex-row items-start rounded-sm p-1"
-      onClick={(event) => {
-        event.stopPropagation();
-      }}
-    >
-      <img
-        alt={file.name}
-        src={file.preview}
-        className="h-12 w-16 rounded-xs object-cover"
-        onLoad={() => {
-          URL.revokeObjectURL(file.preview);
-        }}
-      />
-      <Box className="flex flex-1 flex-row items-center justify-between gap-1 px-3 py-2">
-        <Box className="flex flex-col">
-          <Typography variant="body1" component="p" className="line-clamp-1 leading-3.5">
-            {file.name}
-          </Typography>
-          <Typography variant="body2" component="p" className="text-text-secondary">
-            {Math.round(file.size / 1000)} KB
-          </Typography>
-        </Box>
-        <Button
-          onClick={(event) => {
-            event.stopPropagation();
-            handleRemoveImage();
-          }}
-          className="icon-only hover:text-primary! flex-none"
-          size="tiny"
-          color="grey"
-          variant="pastel"
-          startIcon={<NiBinEmpty size={"tiny"} />}
-        />
-      </Box>
-    </Box>
-  ));
+  // const thumbs = document.map((file: any) => (
+  //   <Box
+  //     key={file.name}
+  //     className="bg-grey-25 flex-non flex w-full cursor-default flex-row items-start rounded-sm p-1"
+  //     onClick={(event) => {
+  //       event.stopPropagation();
+  //     }}
+  //   >
+  //     <img
+  //       alt={file.name}
+  //       src={file.preview}
+  //       className="h-12 w-16 rounded-xs object-cover"
+  //       onLoad={() => {
+  //         URL.revokeObjectURL(file.preview);
+  //       }}
+  //     />
+  //     <Box className="flex flex-1 flex-row items-center justify-between gap-1 px-3 py-2">
+  //       <Box className="flex flex-col">
+  //         <Typography variant="body1" component="p" className="line-clamp-1 leading-3.5">
+  //           {file.name}
+  //         </Typography>
+  //         <Typography variant="body2" component="p" className="text-text-secondary">
+  //           {Math.round(file.size / 1000)} KB
+  //         </Typography>
+  //       </Box>
+  //       <Button
+  //         onClick={(event) => {
+  //           event.stopPropagation();
+  //           handleRemoveImage();
+  //         }}
+  //         className="icon-only hover:text-primary! flex-none"
+  //         size="tiny"
+  //         color="grey"
+  //         variant="pastel"
+  //         startIcon={<NiBinEmpty size={"tiny"} />}
+  //       />
+  //     </Box>
+  //   </Box>
+  // ));
 
   const checkBarcodeExists = (barcode: string) => {
     return barcodes.findIndex(item => item.value === barcode) === -1 ? false : true
@@ -174,8 +174,8 @@ export default function Page() {
       transaction_type: transactionType,
       tube_status: tubeStatus,
       note: note,
-      nominal: nominal,
-      document: document[0],
+      nominal: "",
+      document: undefined,
       barcodes: barcodes,
       created_at: dayjs().toISOString()
     })
@@ -196,10 +196,10 @@ export default function Page() {
     data.append('transaction_type', transactionType)
     data.append('tube_status', tubeStatus)
     data.append('note', note)
-    data.append('nominal', nominal)
-    if (document.length) {
-      data.append('document', document[0])
-    }
+    // data.append('nominal', nominal)
+    // if (document.length) {
+    //   data.append('document', document[0])
+    // }
     barcodes.map((item) => {
       data.append('barcodes[]', item.value)
     })
