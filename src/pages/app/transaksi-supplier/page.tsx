@@ -71,6 +71,7 @@ interface Row {
   date: string
   transaction_type: "refill" | "filled" | "fixing" | "fixed"
   tube_status: "filled" | "empty" | "broken"
+  note: string
   items: {
     id: string
     number: string

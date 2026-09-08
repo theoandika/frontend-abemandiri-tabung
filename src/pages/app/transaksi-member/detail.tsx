@@ -1,8 +1,8 @@
 import { Box, Button, Card, CardContent, Chip, FormControl, Grid, InputLabel, Select, SelectProps, Tooltip, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import 'dayjs/locale/id'
-import { rupiah } from "@/hooks/rupiah";
-import NiDocumentFull from '@/icons/nexture/ni-document-full';
+// import { rupiah } from "@/hooks/rupiah";
+// import NiDocumentFull from '@/icons/nexture/ni-document-full';
 import { useCallback, useEffect, useState } from "react";
 import { DataGrid, GridColDef, GridRowSelectionModel, GridRowSpacingParams, useGridApiRef } from "@mui/x-data-grid";
 import NiArrowDown from "@/icons/nexture/ni-arrow-down";
@@ -178,7 +178,7 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
               <Grid size={{ xs: 6, md: 8}}>
                 {data?.note}
               </Grid>
-              <Grid size={{ xs: 6, md: 4}}>
+              {/* <Grid size={{ xs: 6, md: 4}}>
                 Nominal Jaminan :
               </Grid>
               <Grid size={{ xs: 6, md: 8}}>
@@ -198,7 +198,7 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
                     onClick={() => window.open(data?.document, '_blank')?.focus()}
                   >Lihat</Button>
                 ) : <Chip label="Tidak ada" variant="filled" color="grey" />}
-              </Grid>
+              </Grid> */}
             </Grid>
           </CardContent>
         </Card>

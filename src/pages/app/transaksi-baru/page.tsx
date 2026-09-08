@@ -65,21 +65,21 @@ export default function Page() {
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [errorBarcodes, setErrorBarcodes] = useState<{barcode: string, message: string}[]>([])
 
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {
-      "application/pdf": [],
-    },
-    onDrop: (acceptedFiles) => {
-      const newFiles: any[] = [];
-      acceptedFiles.map((file) => {
-        const newFile = Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        });
-        newFiles.push(newFile);
-      });
-      setDocument(newFiles);
-    },
-  });
+  // const { getRootProps, getInputProps } = useDropzone({
+  //   accept: {
+  //     "application/pdf": [],
+  //   },
+  //   onDrop: (acceptedFiles) => {
+  //     const newFiles: any[] = [];
+  //     acceptedFiles.map((file) => {
+  //       const newFile = Object.assign(file, {
+  //         preview: URL.createObjectURL(file),
+  //       });
+  //       newFiles.push(newFile);
+  //     });
+  //     setDocument(newFiles);
+  //   },
+  // });
 
   const handleRemoveImage = () => {
     setDocument([]);
@@ -428,7 +428,7 @@ export default function Page() {
                     {errors != undefined && errors['note'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['note'][0]}</FormLabel>}
                   </FormControl>
                 </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
+                {/* <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl className="outlined" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Jaminan Nominal</FormLabel>
                     <Input type="number" value={nominal} placeholder="" onChange={(e: any) => setNominal(e.target.value)} disabled={isLoading} />
@@ -453,7 +453,7 @@ export default function Page() {
                     </Box>
                     {errors != undefined && errors['document'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['document'][0]}</FormLabel>}
                   </FormControl>
-                </Grid>
+                </Grid> */}
               </Grid>
 
               <Box className="flex flex-col border border-grey-100 p-4 rounded-md my-4">
