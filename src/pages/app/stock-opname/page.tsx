@@ -60,43 +60,16 @@ interface Row {
     id: string
     name: string
   },
-  tube_count: number
-  not_match_count: number
-};
-
-interface TubeStockOpname {
-  id: string
-  number: string
-  barcode: string
-  tube_content: {
+  content: {
     id: string
     code: string
     name: string
   }
-  type: "medical" | "industry"
-  own: boolean
-  status: string
-  position: string
-}
-
-interface StockOpnameItem {
-  id: string
-  tube: TubeStockOpname
-  match: boolean
-  adjust: boolean
-}
-
-interface DetailStockOpname {
-  id: string
-  date: string
-  site: {
-    id: string
-    name: string
-  }
+  pic: string
+  tube_status: string
   tube_count: number
   not_match_count: number
-  tubes: StockOpnameItem[]
-}
+};
 
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
@@ -122,7 +95,7 @@ export default function Page() {
   const [deleteId, setDeleteId] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
-  const [activeData, setActiveData] = useState<DetailStockOpname | null>(null)
+  const [activeId, setActiveId] = useState<string>("")
 
   const getRows = () => {
     setIsLoading(true)
@@ -163,16 +136,7 @@ export default function Page() {
   }
 
   const doBack = () => {
-    setActiveData(null)
-  }
-
-  const doDetail = (id: string) => {
-    setIsLoading(true)
-    axios.get(ApiEndpoint.STOCK_OPNAME + "/" + id)
-    .then(res => {
-      setActiveData(res?.data?.data)
-    })
-    .finally(() => setIsLoading(false))
+    setActiveId("")
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -193,9 +157,54 @@ export default function Page() {
       valueGetter: (_, row) => row.site.name,
     },
     {
+      field: "content",
+      headerName: "Isi Tabung",
+      width: 150,
+      editable: false,
+      valueGetter: (_, row) => `${row.content.code} - ${row.content.name}`,
+    },
+    {
+      field: "pic",
+      headerName: "PIC Opname",
+      width: 100,
+      editable: false,
+    },
+    {
+      field: "tube_status",
+      headerName: "Kondisi",
+      width: 100,
+      editable: false,
+      valueOptions: [
+        { value: "filled", label: 'Isi' },
+        { value: "empty", label: 'Kosong' },
+        { value: "broken", label: 'Rusak' },
+        { value: "expired", label: 'Afkir' },
+        { value: "display", label: 'Pajangan' }
+      ],
+      valueGetter: (_, row) => {
+        const value = row.tube_status;
+        switch (value) {
+          case "filled":
+            return "Isi"
+          case "empty":
+            return "Kosong"
+          case "broken":
+            return "Rusak"
+          case "expired":
+            return "Afkir"
+          case "display":
+            return "Pajangan"
+          case "unknown":
+            return "Tidak diketahui"
+          default:
+            return ""
+        }
+      },
+    },
+    {
       field: "tube_count",
       headerName: "Jumlah Tabung",
-      width: 150,
+      width: 100,
       editable: false,
       type: "number",
     },
@@ -219,7 +228,7 @@ export default function Page() {
           key={0}
           icon={<NiEyeOpen size="medium" />}
           label="Detail"
-          onClick={() => doDetail(params.row.id)}
+          onClick={() => setActiveId(params.row.id)}
           showInMenu
         />,
         checkPermission([], ['delete-stock-opname']) ? <GridActionsCellItem
@@ -322,7 +331,7 @@ export default function Page() {
     );
   }
 
-  if (activeData) return <DetailStockOpname onBack={doBack} data={activeData} />
+  if (activeId) return <DetailStockOpname onBack={doBack} id={activeId} isLoading={isLoading} setIsLoading={setIsLoading} />
 
   return (
     <Grid container spacing={5}>
@@ -334,6 +343,10 @@ export default function Page() {
           columns={columns}
           initialState={{
             columns: { columnVisibilityModel: { id: false } },
+          }}
+          autosizeOptions={{
+            includeOutliers: true,
+            includeHeaders: true,
           }}
           getRowSpacing={getRowSpacing}
           rowHeight={68}

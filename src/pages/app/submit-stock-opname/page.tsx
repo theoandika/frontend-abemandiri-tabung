@@ -6,7 +6,7 @@ import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NiCross from "@/icons/nexture/ni-cross";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
-import { Box, Button, Card, CardContent, Typography, Grid, Select, MenuItem, FormControl, FormLabel, Alert, Input } from "@mui/material";
+import { Box, Button, Card, CardContent, Typography, Grid, Select, MenuItem, FormControl, FormLabel, Alert, Input, Collapse } from "@mui/material";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import axios from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -74,11 +74,15 @@ export default function DetailMemberTransaction() {
   const save = () => {
     setIsLoading(true)
     const dataToSubmit = {
+      date: date.format("YYYY-MM-DD HH:mm"),
       site: site,
+      content: contentType,
+      pic: pic,
+      tube_status: tubeStatus
     }
     axios.post(ApiEndpoint.STOCK_OPNAME, dataToSubmit)
-    .then(() => {
-      navigate("/stock-opname")
+    .then((res) => {
+      navigate("/stock-opname/" + res?.data?.data?.id)
     })
     .catch(err => {
       let errData = err?.response?.data
@@ -98,6 +102,15 @@ export default function DetailMemberTransaction() {
         </Box>
       </Grid>
       <Grid size={12}>
+        {errorMessage && (
+          <Box>
+            <Collapse in={true}>
+              <Alert className="mb-2" color="error" icon={<NiCrossSquare />} >
+                {errorMessage}
+              </Alert>
+            </Collapse>
+          </Box>
+        )}
         <Card>
           <CardContent>
             <Grid container columnSpacing={4}>
@@ -176,7 +189,7 @@ export default function DetailMemberTransaction() {
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl className="outlined" variant="standard" size="small" fullWidth>
-                  <FormLabel component="label">PIC Opname</FormLabel>
+                  <FormLabel component="label">PIC Opname *</FormLabel>
                   <Input value={pic} placeholder="" onChange={(e: any) => setPic(e.target.value)} disabled={isLoading} />
                   {errors != undefined && errors['pic'] && <FormLabel component="label" className="text-error! mt-0.25 text-sm!">{errors['pic'][0]}</FormLabel>}
                 </FormControl>
@@ -215,13 +228,6 @@ export default function DetailMemberTransaction() {
             </Box>
           </CardContent>
         </Card>
-      </Grid>
-      <Grid size={12}>
-        {errorMessage && (
-          <Alert className="mb-2" color="error" icon={<NiCrossSquare />} >
-            {errorMessage}
-          </Alert>
-        )}
       </Grid>
     </Grid>
   );
