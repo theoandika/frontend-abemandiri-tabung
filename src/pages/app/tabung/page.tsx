@@ -70,7 +70,7 @@ interface Row {
   site: {
     id: string,
     name: string
-  },
+  } | null,
   number: string,
   barcode?: string,
   tube_content: {
@@ -223,10 +223,10 @@ export default function Page() {
     },
     {
       field: "site",
-      headerName: "Isi",
+      headerName: "Cabang",
       width: 150,
       editable: false,
-      valueGetter: (_, row) => `${row.site.name}`,
+      valueGetter: (_, row) => `${row?.site?.name ?? ""}`,
     },
     {
       field: "tube_content",

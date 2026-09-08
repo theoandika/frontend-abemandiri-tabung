@@ -8,7 +8,7 @@ interface DataType {
   site: {
     id: string,
     name: string
-  },
+  } | null,
   number: string,
   barcode?: string,
   tube_content: {
@@ -21,6 +21,7 @@ interface DataType {
   active: boolean,
   status: string,
   position: string,
+  position_name: string,
   second_owner?: {
     id: string,
     code: string,
@@ -74,6 +75,12 @@ export default function DetailTube({ openDialog, setOpenDialog, data }: DialogPr
             {data?.barcode}
           </Grid>
           <Grid size={{ xs: 6, md: 4}}>
+            Cabang :
+          </Grid>
+          <Grid size={{ xs: 6, md: 8}}>
+            {data?.site?.name}
+          </Grid>
+          <Grid size={{ xs: 6, md: 4}}>
             Isi :
           </Grid>
           <Grid size={{ xs: 6, md: 8}}>
@@ -119,7 +126,7 @@ export default function DetailTube({ openDialog, setOpenDialog, data }: DialogPr
             {data?.status == null && 'Tidak diketahui'}
           </Grid>
           <Grid size={{ xs: 6, md: 4}}>
-            Posisi Tabung :
+            Lokasi Tabung :
           </Grid>
           <Grid size={{ xs: 6, md: 8}}>
             {data?.position == 'site' && 'Cabang'}
@@ -127,6 +134,12 @@ export default function DetailTube({ openDialog, setOpenDialog, data }: DialogPr
             {data?.position == 'supplier' && 'Supplier'}
             {data?.position == 'transit' && 'Transit'}
             {data?.position == 'unknown' && 'Tidak diketahui'}
+          </Grid>
+          <Grid size={{ xs: 6, md: 4}}>
+            Nama Lokasi :
+          </Grid>
+          <Grid size={{ xs: 6, md: 8}}>
+            {data?.position_name}
           </Grid>
           <Grid size={{ xs: 6, md: 4}}>
             Foto :
