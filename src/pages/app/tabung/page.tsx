@@ -83,6 +83,7 @@ interface Row {
   active: boolean,
   status: string,
   position: string,
+  position_name: string,
   second_owner?: {
     id: string,
     code: string,
@@ -221,6 +222,13 @@ export default function Page() {
       editable: false,
     },
     {
+      field: "site",
+      headerName: "Isi",
+      width: 150,
+      editable: false,
+      valueGetter: (_, row) => `${row.site.name}`,
+    },
+    {
       field: "tube_content",
       headerName: "Isi",
       width: 100,
@@ -267,7 +275,7 @@ export default function Page() {
     },
     {
       field: "position",
-      headerName: "Posisi Tabung",
+      headerName: "Lokasi Tabung",
       width: 100,
       editable: false,
       type: "singleSelect",
@@ -294,6 +302,12 @@ export default function Page() {
             return "";
         }
       },
+    },
+    {
+      field: "position_name",
+      headerName: "Nama Lokasi",
+      width: 150,
+      editable: false,
     },
     {
       field: "status",
