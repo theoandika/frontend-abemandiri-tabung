@@ -83,13 +83,6 @@ export default function DetailMemberTransaction({ data, onBack }: DialogProps) {
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
-      field: "date",
-      headerName: "Tanggal",
-      editable: false,
-      type: "dateTime",
-      valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
-    },
-    {
       field: "number",
       headerName: "Nomor",
       editable: false,
