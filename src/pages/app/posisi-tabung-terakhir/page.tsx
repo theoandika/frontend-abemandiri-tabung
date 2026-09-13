@@ -23,7 +23,6 @@ import NiCross from "@/icons/nexture/ni-cross";
 import dayjs from "dayjs";
 import 'dayjs/locale/id'
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
-import Loading from "@/pages/loading";
 
 interface DataType {
   id: string
