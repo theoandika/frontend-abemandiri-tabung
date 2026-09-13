@@ -1,5 +1,6 @@
 import { useLayoutContext } from "@/components/layout/layout-context";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 export default function MenuBackdrop() {
   const { resetLeftMenu, leftShowBackdrop, temporaryShowPrimaryMenu, setTemporaryShowPrimaryMenu } = useLayoutContext();
@@ -13,6 +14,10 @@ export default function MenuBackdrop() {
       resetLeftMenu();
     }
   };
+
+  useEffect(() => {
+    resetLeftMenu();
+  }, [])
 
   return (
     <>
