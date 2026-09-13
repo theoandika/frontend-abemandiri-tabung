@@ -270,6 +270,14 @@ export const leftMenuItems: MenuItem[] = [
         href: "/stock-opname-tabung",
         permissions: ["view-tube-stock-opname"],
       },
+      {
+        id: "last-tube-position",
+        icon: "NiTimeline",
+        label: "Posisi Tabung Terakhir",
+        color: "text-primary",
+        href: "/posisi-tabung-terakhir",
+        permissions: ["view-last-tube-position"],
+      },
     ]
   },
 ];

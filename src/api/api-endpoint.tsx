@@ -22,6 +22,7 @@ const ApiEndpoint = {
   // tube
   TUBE_INDEX: "tubes/index",
   CREATE_TUBE: "tubes",
+  BARCODE_LIST: "tubes/barcode-list",
 
   // tube content
   TUBE_CONTENT_ALL: "tube-content-types",
@@ -42,6 +43,7 @@ const ApiEndpoint = {
   // report
   TUBE_ACTIVITY_REPORT: "reports/tube-activities",
   TUBE_STOCK_OPNAME_REPORT: "reports/tube-stock-opnames",
+  LAST_TUBE_POSITION: "reports/last-tube-position",
 
   // stock opname
   STOCK_OPNAME: "stock-opnames",
