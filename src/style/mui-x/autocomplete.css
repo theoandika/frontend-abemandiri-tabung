@@ -1,0 +1,5 @@
+@layer utilities {
+  .MuiAutocomplete-popper {
+    z-index: 999999 !important;
+  }
+}

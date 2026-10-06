@@ -23,6 +23,7 @@ const ApiEndpoint = {
   TUBE_INDEX: "tubes/index",
   CREATE_TUBE: "tubes",
   BARCODE_LIST: "tubes/barcode-list",
+  NUMBER_LIST: "tubes/number-list",
 
   // tube content
   TUBE_CONTENT_ALL: "tube-content-types",

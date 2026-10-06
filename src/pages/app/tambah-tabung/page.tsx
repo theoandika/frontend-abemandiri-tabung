@@ -154,7 +154,9 @@ export default function Page() {
 
   return (
     <Grid container spacing={5} className="w-full" size={12}>
-      <ScannerDialog scanPaused={scanPaused} setScanPaused={setScanPaused} setScanResult={setBarcode} />
+      {!scanPaused && (
+        <ScannerDialog allowManual={false} scanPaused={scanPaused} setScanPaused={setScanPaused} setScanResult={setBarcode} />
+      )}
       <Grid size={12} container spacing={2.5}>
         <Grid size={{ xs: 12, md: "grow" }}>
           <Typography variant="h1" component="h1" className="mb-0">

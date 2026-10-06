@@ -130,7 +130,9 @@ export default function Page() {
     <Box>
       <Box className="min-h-auto border-none w-full">
         <Grid container spacing={5} className="mb-4 w-full">
-          <ScannerDialog scanPaused={scanPaused} setScanPaused={setScanPaused} setScanResult={setResult} />
+          {!scanPaused && (
+            <ScannerDialog allowManual={false} scanPaused={scanPaused} setScanPaused={setScanPaused} setScanResult={setResult} />
+          )}
           <Grid container spacing={2.5} className="w-full" size={12}>
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">

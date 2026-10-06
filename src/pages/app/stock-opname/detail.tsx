@@ -390,7 +390,9 @@ export default function DetailStockOpname({ id, onBack, isLoading, setIsLoading 
 	return (
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteItem} />
-      <ScannerDialog allowMultiple={true} scanPaused={scanPause} setScanPaused={setScanPause} setScanResult={setBarcode} />
+      {!scanPause && (
+        <ScannerDialog allowMultiple={false} scanPaused={scanPause} setScanPaused={setScanPause} setScanResult={setBarcode} />
+      )}
       <Grid size={12}>
         <Box className="flex items-center gap-5">
           <Tooltip title="Kembali">

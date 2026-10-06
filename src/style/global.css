@@ -81,6 +81,7 @@
 @import "./mui-x/data-grid.css";
 @import "./mui-x/date-time-picker.css";
 @import "./mui-x/tree-view.css";
+@import "./mui-x/autocomplete.css";
 
 /* --------- Plugins --------- */
 @import "./plugins/lightbox-yarl.css";
