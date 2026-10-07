@@ -2,8 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   Alert,
+  Box,
   Button,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
   FilledInput,
   FormControl,
   Grid,
@@ -50,6 +57,8 @@ import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
 import { useUserContext } from "@/hooks/use-user";
+import NiUploadCloud from "@/icons/nexture/ni-upload-cloud";
+import * as XLSX from 'xlsx';
 
 interface Row {
   id: string,
@@ -57,6 +66,12 @@ interface Row {
   name: string,
   description: string
 };
+
+interface ExcelRow {
+  code: string,
+  name: string,
+  description: string
+}
 
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
@@ -82,6 +97,9 @@ export default function Page() {
   const [deleteId, setDeleteId] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [excelRows, setExcelRows] = useState<ExcelRow[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState<boolean>(false)
+  const [failedImportRows, setFailedImportRows] = useState<ExcelRow[]>([]);
 
   const getRows = () => {
     setIsLoading(true)
@@ -119,6 +137,56 @@ export default function Page() {
       setErrorMessage(errData?.message)
     })
     .finally(() => setIsLoading(false))
+  }
+
+  const importExcel = () => {
+    document.getElementById("import-excel")?.click()
+  }
+
+  const closeImportDialog = (_: React.MouseEvent<HTMLButtonElement>, r: React.ReactNode) => {
+    if (r !== "backdropClick") {
+      setErrorMessage("")
+      setImportDialogOpen(false)
+      setExcelRows([])
+      setFailedImportRows([])
+    }
+  }
+
+  const loadExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      setExcelRows(jsonData as ExcelRow[]);
+      setImportDialogOpen(true);
+    } catch (error) {
+      setErrorMessage("Gagal memuat file Excel: " + error);
+    }
+  }
+
+  const processImport = () => {
+    if (excelRows.length === 0) {
+      setErrorMessage("Tidak ada data untuk diunggah");
+      return;
+    }
+    excelRows.forEach((row) => {
+      doImport(row);
+    });
+  }
+
+  const doImport = (data: ExcelRow) => {
+    axios.post(ApiEndpoint.SUPPLIER, data)
+    .then(() => {
+      navigate('/supplier')
+    })
+    .catch((err) => {
+      let errData = err?.response?.data
+      setErrorMessage(errData?.message);
+    })
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -208,6 +276,37 @@ export default function Page() {
                   />
                 </Tooltip>
               )}
+
+              <input type="file" id="import-excel" accept=".xlsx" className="hidden" onChange={loadExcel} />
+              <Tooltip title="Import Excel">
+                <Button
+                  className="icon-only surface-standard"
+                  size="medium"
+                  color="grey"
+                  variant="surface"
+                  startIcon={<NiUploadCloud size={"medium"} />}
+                  onClick={importExcel}
+                />
+              </Tooltip>
+
+              <Dialog open={importDialogOpen} onClose={closeImportDialog} maxWidth="xs" fullWidth disableEscapeKeyDown disableEnforceFocus>
+                <DialogTitle>Import Excel</DialogTitle>
+                <DialogContent>
+                  <Box className="flex flex-col">
+                    <Box className="flex justify-between">
+                      <DialogContentText>Jumlah Data</DialogContentText>
+                      <DialogContentText className="font-bold">{excelRows.length}</DialogContentText>
+                    </Box>
+                    <Divider flexItem />
+                  </Box>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setImportDialogOpen(false)}>Batal</Button>
+                  <Button variant="pastel" autoFocus onClick={processImport}>
+                    Proses
+                  </Button>
+                </DialogActions>
+              </Dialog>
             </Grid>
           </Grid>
 
