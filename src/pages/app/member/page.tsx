@@ -2,14 +2,22 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   Alert,
+  Box,
   Button,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
   FilledInput,
   FormControl,
   Grid,
   IconButton,
   InputAdornment,
   InputLabel,
+  LinearProgress,
   Select,
   SelectProps,
   Tooltip,
@@ -50,6 +58,8 @@ import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
 import { useUserContext } from "@/hooks/use-user";
+import NiUploadCloud from "@/icons/nexture/ni-upload-cloud";
+import * as XLSX from 'xlsx';
 
 interface Row {
   id: string,
@@ -57,6 +67,13 @@ interface Row {
   name: string,
   address: string
 };
+
+interface ExcelRow {
+  "Kode Member": string,
+  "Nama Member": string,
+  "Alamat": string,
+  "Telp": string
+}
 
 export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
@@ -82,6 +99,12 @@ export default function Page() {
   const [deleteId, setDeleteId] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [uploadErrorMessage, setUploadErrorMessage] = useState<string>("")
+  const [excelRows, setExcelRows] = useState<ExcelRow[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState<boolean>(false)
+  const [failedImportRows, setFailedImportRows] = useState<ExcelRow[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadState, setUploadState] = useState<"idle" | "uploading" | "completed">("idle");
 
   const getRows = () => {
     setIsLoading(true)
@@ -120,6 +143,88 @@ export default function Page() {
     })
     .finally(() => setIsLoading(false))
   }
+
+  const importExcel = () => {
+    document.getElementById("import-excel")?.click()
+  }
+
+  const closeImportDialog = (_: React.MouseEvent<HTMLButtonElement>, r: React.ReactNode) => {
+    if (r !== "backdropClick") {
+      cancelImport()
+    }
+  }
+
+  const loadExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFailedImportRows([]);
+    setUploadProgress(0);
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      setExcelRows(jsonData as ExcelRow[]);
+      setImportDialogOpen(true);
+    } catch (error) {
+      setUploadErrorMessage("Gagal memuat file Excel: " + error);
+    }
+  }
+
+  const cancelImport = () => {
+    setUploadErrorMessage("")
+    setImportDialogOpen(false)
+    setExcelRows([])
+    setFailedImportRows([])
+    setUploadProgress(0)
+  }
+
+  const processImport = () => {
+    setUploadState("uploading");
+    setUploadProgress(0);
+    setFailedImportRows([]);
+    setUploadErrorMessage("")
+    if (excelRows.length === 0) {
+      setUploadErrorMessage("Tidak ada data untuk diunggah");
+      setUploadState("completed");
+      return;
+    }
+    excelRows.forEach((row) => {
+      doImport(row);
+    });
+  }
+
+  const doImport = (data: ExcelRow) => {
+    let payload = {
+      code: data["Kode Member"],
+      name: data["Nama Member"],
+      address: data["Alamat"],
+      phone_number: data["Telp"]
+    }
+    axios.post(ApiEndpoint.MEMBER_ALL, payload)
+    .catch((err) => {
+      let errData = err?.response?.data
+      setUploadErrorMessage(errData?.message);
+      setFailedImportRows((prev) => [...prev, data]);
+    })
+    .finally(() => {
+      setUploadProgress((prev) => prev + 1);
+    })
+  }
+
+  useEffect(() => {
+    if (excelRows.length == uploadProgress) {
+      setUploadState("completed");
+      getRows();
+    }
+  }, [uploadProgress]);
+
+  useEffect(() => {
+    if (excelRows.length == uploadProgress && failedImportRows.length <= 0) {
+      setImportDialogOpen(false);
+    }
+  }, [uploadProgress, failedImportRows]);
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
@@ -215,6 +320,22 @@ export default function Page() {
                   />
                 </Tooltip>
               )}
+
+              {checkPermission([], ['create-member']) && (
+                <>
+                  <input type="file" id="import-excel" accept=".xlsx" className="hidden" onChange={loadExcel} />
+                  <Tooltip title="Import Excel">
+                    <Button
+                      className="icon-only surface-standard"
+                      size="medium"
+                      color="grey"
+                      variant="surface"
+                      startIcon={<NiUploadCloud size={"medium"} />}
+                      onClick={importExcel}
+                    />
+                  </Tooltip>
+                </>
+              )}
             </Grid>
           </Grid>
 
@@ -267,6 +388,47 @@ export default function Page() {
   return (
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
+      <Dialog open={importDialogOpen} onClose={closeImportDialog} maxWidth="xs" fullWidth disableEscapeKeyDown>
+        <DialogTitle>Import Excel</DialogTitle>
+        <DialogContent>
+          <Box className="flex flex-col">
+            {uploadErrorMessage && (
+              <Alert color="error" className="mb-2 rounded!" icon={<NiCrossSquare />} >
+                {uploadErrorMessage}
+              </Alert>
+            )}
+            <Box className="flex justify-between">
+              <DialogContentText>Jumlah Data</DialogContentText>
+              <DialogContentText className="font-bold">{excelRows.length}</DialogContentText>
+            </Box>
+            <Divider flexItem />
+            {uploadState === "uploading" && (
+              <Box className="flex items-center">
+                <Box className="me-1 w-full">
+                  <LinearProgress variant="determinate" value={100 / excelRows.length * uploadProgress} />
+                </Box>
+                <Box>
+                  <Typography variant="body2" className="text-text-secondary">{`${uploadProgress}/${excelRows.length}`}</Typography>
+                </Box>
+              </Box>
+            )}
+            {failedImportRows.length > 0 && (
+              <Box className="flex justify-between">
+                <DialogContentText className="text-red-500">Gagal Diunggah</DialogContentText>
+                <DialogContentText className="font-bold text-red-500">{failedImportRows.length}</DialogContentText>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => cancelImport()} disabled={uploadState === "uploading"}>
+            Batal
+          </Button>
+          <Button variant="pastel" onClick={() =>processImport()} disabled={uploadState === "uploading"}>
+            Proses
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Grid size={12}>
         <DataGrid
           loading={isLoading}
