@@ -1,5 +1,5 @@
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, CircularProgress, Divider, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { Grid } from "@mui/material";
 import axios from "@/api/axios";
 import ApiEndpoint from "@/api/api-endpoint"
@@ -11,13 +11,53 @@ interface ActiveTubeOwnCount {
   content_type: {
     content_type: string
     empty: number
+    empty_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     filled: number
+    filled_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     broken: number
+    broken_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     expired: number
+    expired_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     display: number
+    display_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     refill: number
+    refill_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     borrow: number
+    borrow_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
     fixing: number
+    fixing_tube: {
+      id: string
+      number: string
+      barcode: string
+    }[]
   }[]
 }
 
@@ -83,77 +123,334 @@ export default function Page() {
                         </AccordionSummary>
                         <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
                           <Box className="flex flex-col gap-1.5">
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                STOK TOKO ISI
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.filled}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                STOK TOKO KOSONG
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.empty}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                STOK TOKO BERMASALAH
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.broken}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                STOK TOKO AFKIR
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.expired}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                STOK TOKO PAJANGAN
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.display}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                DIPINJAM
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.borrow}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                ISI KE SUPPLIER
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.refill}
-                              </Typography>
-                            </Box>
-                            <Divider />
-                            <Box className="flex justify-between items-center">
-                              <Typography variant="h6" component="h6">
-                                PERBAIKAN KE SUPPLIER
-                              </Typography>
-                              <Typography variant="h6" component="h6">
-                                {val2.fixing}
-                              </Typography>
-                            </Box>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      STOK TOKO ISI
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.filled}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.filled_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      STOK TOKO KOSONG
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.empty}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.empty_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      STOK TOKO BERMASALAH
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.broken}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.broken_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      STOK TOKO AFKIR
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.expired}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.expired_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      STOK TOKO PAJANGAN
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.display}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.display_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      DIPINJAM
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.borrow}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.borrow_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      ISI KE SUPPLIER
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.refill}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.refill_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
+                            <Accordion className="mb-1.5">
+                              <AccordionSummary className="group">
+                                <Button
+                                  component="div"
+                                  variant="pastel"
+                                  size="large"
+                                  color="text-primary"
+                                  className="rounded full-width-button hover:text-primary group-aria-expanded:text-primary group-aria-expanded:rounded-b-none hover:bg-gray-500/10"
+                                  endIcon={<NiChevronRightSmall size={20} className="accordion-rotate" />}
+                                >
+                                  <Box className="w-full flex justify-between items-center">
+                                    <Typography variant="h6" component="h6">
+                                      PERBAIKAN KE SUPPLIER
+                                    </Typography>
+                                    <Typography variant="h6" component="h6">
+                                      {val2.fixing}
+                                    </Typography>
+                                  </Box>
+                                </Button>
+                              </AccordionSummary>
+                              <AccordionDetails className="bg-grey-500/10 mb-1.5 rounded-b-lg px-6 py-4 w-full">
+                                <TableContainer component={Box}>
+                                  <Table size="small" className="w-full">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell>Nomor</TableCell>
+                                        <TableCell>Barcode</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {val2.fixing_tube.map((row) => (
+                                        <TableRow key={row.id}>
+                                          <TableCell>{row.number}</TableCell>
+                                          <TableCell>{row.barcode}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </TableContainer>
+                              </AccordionDetails>
+                            </Accordion>
                           </Box>
                         </AccordionDetails>
                       </Accordion>
