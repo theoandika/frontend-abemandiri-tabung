@@ -10,6 +10,7 @@ const ApiEndpoint = {
   // member
   MEMBER_ALL: "members",
   MEMBER_INDEX: "members/index",
+  MEMBER_IMPORT: "members/import",
 
   // site
   SITE_ALL: "sites",
