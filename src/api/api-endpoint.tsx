@@ -19,6 +19,7 @@ const ApiEndpoint = {
   // supplier
   SUPPLIER: "suppliers",
   SUPPLIER_INDEX: "suppliers/index",
+  SUPPLIER_IMPORT: "suppliers/import",
 
   // tube
   TUBE_INDEX: "tubes/index",
