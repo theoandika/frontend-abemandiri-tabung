@@ -10,7 +10,7 @@ export default function CacheInitializer() {
       axios.get(ApiEndpoint.MEMBER_ALL),
       axios.get(ApiEndpoint.SUPPLIER),
       axios.get(ApiEndpoint.TUBE_CONTENT_ALL),
-      axios.get(ApiEndpoint.TUBE_ACTIVITY_REPORT),
+      // axios.get(ApiEndpoint.TUBE_ACTIVITY_REPORT),
     ]);
   }, []);
 

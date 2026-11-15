@@ -66,7 +66,8 @@ const ApiEndpoint = {
   COLLATERAL: "collaterals",
 
   // dashboard
-  ACTIVE_TUBE_OWN_COUNT: "dashboard/active-tube-own-count"
+  ACTIVE_TUBE_OWN_COUNT: "dashboard/active-tube-own-count",
+  TUBE_BY_STATUS: "dashboard/tubes-by-status"
 };
 
 export default ApiEndpoint;
