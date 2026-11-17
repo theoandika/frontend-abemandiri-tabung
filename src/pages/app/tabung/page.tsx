@@ -67,6 +67,33 @@ import * as XLSX from 'xlsx';
 
 interface Row {
   id: string,
+  // site: {
+  //   id: string,
+  //   name: string
+  // } | null,
+  number: string,
+  barcode?: string,
+  tube_content: {
+    id: string,
+    code: string,
+    name: string
+  },
+  type: string,
+  own: boolean,
+  active: boolean,
+  status: string,
+  // position: string,
+  // position_name: string,
+  // second_owner?: {
+  //   id: string,
+  //   code: string,
+  //   name: string
+  // },
+  // photo?: string
+};
+
+interface DetailRow {
+  id: string,
   site: {
     id: string,
     name: string
@@ -129,7 +156,7 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [openDetail, setOpenDetail] = useState<boolean>(false)
-  const [activeData, setActiveData] = useState<Row>()
+  const [activeData, setActiveData] = useState<DetailRow>()
 
   const getRows = () => {
     setIsLoading(true)
@@ -184,27 +211,31 @@ export default function Page() {
   }
 
   const doOpenDetail = (data: Row) => {
-    setActiveData(data)
-    setOpenDetail(true)
+    axios.get(ApiEndpoint.CREATE_TUBE + "/" + data.id)
+    .then((res) => {
+      let result: DetailRow = res.data?.data
+      setActiveData(result)
+      setOpenDetail(true)
+    })
   }
 
   const exportExcel = () => {
-    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
-    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
-    const dataExport: DataExport[] = filteredRows.map((row) => ({
-      Nomor: row.number,
-      Barcode: row.barcode || "",
-      Isi: `${row.tube_content.code} - ${row.tube_content.name}`,
-      Jenis: row.type === "medical" ? "Medis" : row.type === "industry" ? "Industri" : "",
-      Pemilik: row.own ? "Tabung DM" : row.second_owner ? `Member (${row.second_owner.code} - ${row.second_owner.name})` : "",
-      Posisi: row.position === "site" ? "Cabang" : row.position === "supplier" ? "Supplier" : row.position === "member" ? "Member" : row.position === "transit" ? "Transit" : row.position === "unknown" ? "Tidak diketahui" : "",
-      Kondisi: row.status === "filled" ? "Isi" : row.status === "empty" ? "Kosong" : row.status === "broken" ? "Rusak" : row.status === "expired" ? "Afkir" : row.status === "display" ? "Pajangan" : row.status === "unknown" ? "Tidak diketahui" : "",
-      Aktif: row.active ? "Ya" : "Tidak",
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(dataExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    XLSX.writeFile(workbook, "data_tabung.xlsx");
+    // const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
+    // const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
+    // const dataExport: DataExport[] = filteredRows.map((row) => ({
+    //   Nomor: row.number,
+    //   Barcode: row.barcode || "",
+    //   Isi: `${row.tube_content.code} - ${row.tube_content.name}`,
+    //   Jenis: row.type === "medical" ? "Medis" : row.type === "industry" ? "Industri" : "",
+    //   Pemilik: row.own ? "Tabung DM" : row.second_owner ? `Member (${row.second_owner.code} - ${row.second_owner.name})` : "",
+    //   Posisi: row.position === "site" ? "Cabang" : row.position === "supplier" ? "Supplier" : row.position === "member" ? "Member" : row.position === "transit" ? "Transit" : row.position === "unknown" ? "Tidak diketahui" : "",
+    //   Kondisi: row.status === "filled" ? "Isi" : row.status === "empty" ? "Kosong" : row.status === "broken" ? "Rusak" : row.status === "expired" ? "Afkir" : row.status === "display" ? "Pajangan" : row.status === "unknown" ? "Tidak diketahui" : "",
+    //   Aktif: row.active ? "Ya" : "Tidak",
+    // }));
+    // const worksheet = XLSX.utils.json_to_sheet(dataExport);
+    // const workbook = XLSX.utils.book_new();
+    // XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    // XLSX.writeFile(workbook, "data_tabung.xlsx");
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -214,26 +245,29 @@ export default function Page() {
       headerName: "Nomor",
       width: 120,
       editable: false,
+      flex: 1,
     },
     {
       field: "barcode",
       headerName: "Barcode",
       width: 120,
       editable: false,
+      flex: 1,
     },
-    {
-      field: "site",
-      headerName: "Cabang",
-      width: 150,
-      editable: false,
-      valueGetter: (_, row) => `${row?.site?.name ?? ""}`,
-    },
+    // {
+    //   field: "site",
+    //   headerName: "Cabang",
+    //   width: 150,
+    //   editable: false,
+    //   valueGetter: (_, row) => `${row?.site?.name ?? ""}`,
+    // },
     {
       field: "tube_content",
       headerName: "Isi",
       width: 100,
       editable: false,
       valueGetter: (_, row) => `${row.tube_content.code} - ${row.tube_content.name}`,
+      flex: 1,
     },
     {
       field: "type",
@@ -255,6 +289,7 @@ export default function Page() {
             return "";
         }
       },
+      flex: 1,
     },
     {
       field: "own",
@@ -272,43 +307,44 @@ export default function Page() {
           </Box>
         )
       },
+      flex: 0.5,
     },
-    {
-      field: "position",
-      headerName: "Lokasi Tabung",
-      width: 100,
-      editable: false,
-      type: "singleSelect",
-      valueOptions: [
-        { value: "site", label: 'Cabang' },
-        { value: "supplier", label: 'Supplier' },
-        { value: "member", label: 'Member' },
-        { value: "transit", label: 'Transit' },
-        { value: "unknown", label: 'Tidak diketahui' },
-      ],
-      valueFormatter: (value) => {
-        switch (value) {
-          case "site":
-            return "Cabang";
-          case "supplier":
-            return "Supplier";
-          case "member":
-            return "Member";
-          case "transit":
-            return "Transit";
-          case "unknown":
-            return "Tidak diketahui";
-          default:
-            return "";
-        }
-      },
-    },
-    {
-      field: "position_name",
-      headerName: "Nama Lokasi",
-      width: 150,
-      editable: false,
-    },
+    // {
+    //   field: "position",
+    //   headerName: "Lokasi Tabung",
+    //   width: 100,
+    //   editable: false,
+    //   type: "singleSelect",
+    //   valueOptions: [
+    //     { value: "site", label: 'Cabang' },
+    //     { value: "supplier", label: 'Supplier' },
+    //     { value: "member", label: 'Member' },
+    //     { value: "transit", label: 'Transit' },
+    //     { value: "unknown", label: 'Tidak diketahui' },
+    //   ],
+    //   valueFormatter: (value) => {
+    //     switch (value) {
+    //       case "site":
+    //         return "Cabang";
+    //       case "supplier":
+    //         return "Supplier";
+    //       case "member":
+    //         return "Member";
+    //       case "transit":
+    //         return "Transit";
+    //       case "unknown":
+    //         return "Tidak diketahui";
+    //       default:
+    //         return "";
+    //     }
+    //   },
+    // },
+    // {
+    //   field: "position_name",
+    //   headerName: "Nama Lokasi",
+    //   width: 150,
+    //   editable: false,
+    // },
     {
       field: "status",
       headerName: "Kondisi",
@@ -342,6 +378,7 @@ export default function Page() {
             return ""
         }
       },
+      flex: 1,
     },
     {
       field: "active",
@@ -359,6 +396,7 @@ export default function Page() {
           return <Box></Box>;
         }
       },
+      flex: 0.5,
     },
     {
       field: "actions",
