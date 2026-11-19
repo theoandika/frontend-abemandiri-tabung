@@ -64,6 +64,7 @@ import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailTube from "./detail";
 import { useUserContext } from "@/hooks/use-user";
 import * as XLSX from 'xlsx';
+import BarcodeHistory from "./barcode-history";
 
 interface Row {
   id: string,
@@ -119,6 +120,15 @@ interface DetailRow {
   photo?: string
 };
 
+interface BarcodeHistoryData {
+  id: string
+  barcodes: {
+    id: string
+    barcode: string
+    photo: string
+  }[]
+};
+
 interface DataExport {
   Nomor: string
   Barcode: string
@@ -157,6 +167,9 @@ export default function Page() {
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [openDetail, setOpenDetail] = useState<boolean>(false)
   const [activeData, setActiveData] = useState<DetailRow>()
+  const [openBarcodeHistory, setOpenBarcodeHistory] = useState<boolean>(false)
+  const [activeBarcodeHistoryData, setActiveBarcodeHistoryData] = useState<BarcodeHistoryData>()
+  const [isNeedReloadData, setIsNeedReloadData] = useState<boolean>(false)
 
   const getRows = () => {
     setIsLoading(true)
@@ -177,6 +190,13 @@ export default function Page() {
       getRows()
     }
   }, [])
+
+  useEffect(() => {
+    if (isNeedReloadData) {
+      getRows()
+      setIsNeedReloadData(false)
+    }
+  }, [isNeedReloadData])
 
   const doDelete = (id: string) => {
     setDeleteId(id)
@@ -216,6 +236,15 @@ export default function Page() {
       let result: DetailRow = res.data?.data
       setActiveData(result)
       setOpenDetail(true)
+    })
+  }
+
+  const doOpenBarcodeHistory = (data: Row) => {
+    axios.get(ApiEndpoint.TUBE_BARCODES + "/" + data.id + "/barcode-history")
+    .then((res) => {
+      let result: BarcodeHistoryData = res.data?.data
+      setActiveBarcodeHistoryData(result)
+      setOpenBarcodeHistory(true)
     })
   }
 
@@ -436,6 +465,13 @@ export default function Page() {
             onClick={() => params.row.active ? deactivate(params.row.id) : activate(params.row.id)}
             showInMenu
           /> : <></>,
+          checkPermission([], ['view-tube-barcode']) ? <GridActionsCellItem
+            key={4}
+            icon={<NiBarcode size="medium" />}
+            label="Barcode"
+            onClick={() => doOpenBarcodeHistory(params.row)}
+            showInMenu
+          /> : <></>,
         ]
       }
     },
@@ -480,7 +516,7 @@ export default function Page() {
                 />
               </Tooltip>
 
-              {checkPermission([], ['view-tube-barcode']) && (
+              {/* {checkPermission([], ['view-tube-barcode']) && (
                 <Tooltip title="Ubah Barcode">
                   <Button
                     className="icon-only surface-standard"
@@ -491,7 +527,7 @@ export default function Page() {
                     onClick={() => navigate('/ubah-barcode')}
                   />
                 </Tooltip>
-              )}
+              )} */}
 
               {checkPermission([], ['create-tube']) && (
                 <Tooltip title="Tambah Tabung">
@@ -558,6 +594,7 @@ export default function Page() {
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <DetailTube openDialog={openDetail} setOpenDialog={setOpenDetail} data={activeData} />
+      <BarcodeHistory openDialog={openBarcodeHistory} setOpenDialog={setOpenBarcodeHistory} propsData={activeBarcodeHistoryData} setIsNeedReloadData={setIsNeedReloadData} />
       <Grid size={12}>
         <DataGrid
           apiRef={apiRef}

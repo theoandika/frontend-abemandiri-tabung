@@ -111,7 +111,7 @@ export const leftMenuItems: MenuItem[] = [
     icon: "NiTubes",
     label: "Tabung",
     color: "text-primary",
-    permissions: ["view-tube","create-tube","view-tube-barcode"],
+    permissions: ["view-tube","create-tube"],
     children: [
       {
         id: "tube-list",
@@ -129,14 +129,14 @@ export const leftMenuItems: MenuItem[] = [
         href: "/tambah-tabung",
         permissions: ["create-tube"],
       },
-      {
-        id: "change-tube-barcode",
-        icon: "NiBarcode",
-        label: "Ubah Barcode",
-        color: "text-primary",
-        href: "/ubah-barcode",
-        permissions: ["view-tube-barcode"],
-      }
+      // {
+      //   id: "change-tube-barcode",
+      //   icon: "NiBarcode",
+      //   label: "Ubah Barcode",
+      //   color: "text-primary",
+      //   href: "/ubah-barcode",
+      //   permissions: ["view-tube-barcode"],
+      // }
     ]
   },
   {

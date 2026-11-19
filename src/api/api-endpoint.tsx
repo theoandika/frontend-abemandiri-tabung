@@ -38,6 +38,7 @@ const ApiEndpoint = {
   // tube barcodes
   TUBE_BARCODES_INDEX: "tube-barcodes/index",
   TUBE_BARCODES_UPDATE: "tube-barcodes/update",
+  TUBE_BARCODES: "tube-barcodes",
 
   // supplier transaction
   SUPPLIER_TRANSACTION: "supplier-transactions",
