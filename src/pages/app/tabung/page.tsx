@@ -4,32 +4,27 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   Collapse,
-  FilledInput,
   FormControl,
   FormLabel,
   Grid,
-  IconButton,
   Input,
-  InputAdornment,
   InputLabel,
+  MenuItem,
   Select,
   SelectProps,
   Tooltip,
   Typography,
 } from "@mui/material";
 import {
-  ColumnsPanelTrigger,
   DataGrid,
   GridActionsCellItem,
   GridColDef,
-  gridFilteredSortedRowEntriesSelector,
   GridRenderCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
-  QuickFilter,
-  QuickFilterClear,
-  QuickFilterControl,
   Toolbar,
   useGridApiRef,
 } from "@mui/x-data-grid";
@@ -52,7 +47,6 @@ import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
 import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
-import { cn } from "@/lib/utils";
 
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
@@ -147,10 +141,6 @@ export default function Page() {
     type: "include",
     ids: new Set(),
   });
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
-  });
 
   const getRowSpacing = useCallback((params: GridRowSpacingParams) => {
     return {
@@ -172,13 +162,15 @@ export default function Page() {
   const [openBarcodeHistory, setOpenBarcodeHistory] = useState<boolean>(false)
   const [activeBarcodeHistoryData, setActiveBarcodeHistoryData] = useState<BarcodeHistoryData>()
   const [isNeedReloadData, setIsNeedReloadData] = useState<boolean>(false)
-  const [filter, setFilter] = useState<{ search:  string, paginate: number, content: string, type: string, active: boolean | undefined,  }>({
+  const [filter, setFilter] = useState<{ search:  string, paginate: number, content: string, type: string, own: number | undefined, active: number | undefined,  }>({
     search: "",
     paginate: 10,
     content: "",
     type: "",
+    own: undefined,
     active: undefined
   })
+  const [contentTypeFilter, setContentTypeFilter] = useState([])
 
   const getRows = () => {
     setIsLoading(true)
@@ -192,11 +184,23 @@ export default function Page() {
     })
   }
 
+  const getContentOptions = () => {
+    setIsLoading(true)
+    axios.get(ApiEndpoint.TUBE_CONTENT_ALL)
+    .then((res) => {
+      setContentTypeFilter(res?.data?.data)
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
+  }
+
   useEffect(() => {
     if (!checkPermission([], ['view-tube'])) {
       navigate('/404')
     } else {
       getRows()
+      getContentOptions()
     }
   }, [])
 
@@ -283,6 +287,8 @@ export default function Page() {
       headerName: "Nomor",
       width: 120,
       editable: false,
+      filterable: false,
+      sortable: false,
       flex: 1,
     },
     {
@@ -290,6 +296,8 @@ export default function Page() {
       headerName: "Barcode",
       width: 120,
       editable: false,
+      filterable: false,
+      sortable: false,
       flex: 1,
     },
     // {
@@ -304,6 +312,8 @@ export default function Page() {
       headerName: "Isi",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       valueGetter: (_, row) => `${row.tube_content.code} - ${row.tube_content.name}`,
       flex: 1,
     },
@@ -312,6 +322,8 @@ export default function Page() {
       headerName: "Jenis",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "medical", label: 'Medis' },
@@ -336,6 +348,8 @@ export default function Page() {
       align: "left",
       headerAlign: "left",
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "boolean",
       renderCell: (params: GridRenderCellParams<any, boolean>) => {
         const value = params.value;
@@ -425,6 +439,8 @@ export default function Page() {
       align: "left",
       headerAlign: "left",
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "boolean",
       renderCell: (params: GridRenderCellParams<any, boolean>) => {
         const value = params.value;
@@ -486,141 +502,159 @@ export default function Page() {
     },
   ];
 
-  function CustomToolbar() {
-    return (
-      <Toolbar className="min-h-auto border-none">
-        <Grid container spacing={5} className="mb-4 w-full">
-          <Grid container spacing={2.5} className="w-full" size={12}>
-            <Grid size={{ xs: 12, md: "grow" }}>
-              <Typography variant="h1" component="h1" className="mb-0">
-                Daftar Tabung
-              </Typography>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Columns">
-                <ColumnsPanelTrigger
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      className="icon-only surface-standard flex-none"
-                      size="medium"
-                      color="grey"
-                      variant="surface"
-                    >
-                      <NiCols size={"medium"} />
-                    </Button>
-                  )}
-                />
-              </Tooltip>
-
-              <Tooltip title="Download Excel">
-                <Button
-                  className="icon-only surface-standard flex-none"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiArrowInDown size={"medium"} />}
-                  onClick={exportExcel}
-                />
-              </Tooltip>
-
-              {/* {checkPermission([], ['view-tube-barcode']) && (
-                <Tooltip title="Ubah Barcode">
-                  <Button
-                    className="icon-only surface-standard"
-                    size="medium"
-                    color="grey"
-                    variant="surface"
-                    startIcon={<NiBarcode size={"medium"} />}
-                    onClick={() => navigate('/ubah-barcode')}
-                  />
-                </Tooltip>
-              )} */}
-
-              {checkPermission([], ['create-tube']) && (
-                <Tooltip title="Tambah Tabung">
-                  <Button
-                    className="icon-only surface-standard"
-                    size="medium"
-                    color="grey"
-                    variant="surface"
-                    startIcon={<NiPlus size={"medium"} />}
-                    onClick={() => navigate('/tambah-tabung')}
-                  />
-                </Tooltip>
-              )}
-            </Grid>
-          </Grid>
-
-          {errorMessage && (
-            <Grid size={12}>
-              <Collapse in={true}>
-                <Alert color="error" icon={<NiCrossSquare />} >
-                  {errorMessage}
-                </Alert>
-              </Collapse>
-            </Grid>
-          )}
-
-          <Grid container spacing={5} className="w-full" size={12}>
-            {/* <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
-              <InputLabel>Cari</InputLabel>
-              <QuickFilter
-                render={() => (
-                  <QuickFilterControl
-                    render={({ ref, ...controlProps }, state) => (
-                      <FilledInput
-                        {...controlProps}
-                        inputRef={ref}
-                        endAdornment={
-                          <>
-                            <InputAdornment position="end" className={cn(state.value === "" && "hidden")}>
-                              <QuickFilterClear edge="end">
-                                <NiCross size="medium" className="text-text-disabled" />
-                              </QuickFilterClear>
-                            </InputAdornment>
-                            <InputAdornment position="end" className={cn(state.value !== "" && "hidden")}>
-                              <IconButton edge="end">
-                                {<NiSearch size="medium" className="text-text-disabled" />}
-                              </IconButton>
-                            </InputAdornment>
-                          </>
-                        }
-                      />
-                    )}
-                  />
-                )}
-              />
-            </FormControl> */}
-            <Grid columns={{xs: 1, md: 2, lg:3}}>
-              <FormControl className="outlined" variant="standard" size="small" fullWidth>
-                <FormLabel component="label">Cari</FormLabel>
-                  <Input
-                    placeholder=""
-                    value={filter?.search ?? ""}
-                    onChange={e => setFilter(prev => ({ ...prev,  search: e.target.value}))}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Toolbar>
-    );
-  }
-
   return (
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
       <DetailTube openDialog={openDetail} setOpenDialog={setOpenDetail} data={activeData} />
       <BarcodeHistory openDialog={openBarcodeHistory} setOpenDialog={setOpenBarcodeHistory} propsData={activeBarcodeHistoryData} setIsNeedReloadData={setIsNeedReloadData} />
+      <Grid container spacing={5} className="w-full">
+        <Grid container spacing={2.5} className="w-full" size={12}>
+          <Grid size={{ xs: 12, md: "grow" }}>
+            <Typography variant="h1" component="h1" className="mb-0">
+              Daftar Tabung
+            </Typography>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
+            <Tooltip title="Download Excel">
+              <Button
+                className="icon-only surface-standard flex-none"
+                size="medium"
+                color="grey"
+                variant="surface"
+                startIcon={<NiArrowInDown size={"medium"} />}
+                onClick={exportExcel}
+              />
+            </Tooltip>
+
+            {checkPermission([], ['create-tube']) && (
+              <Tooltip title="Tambah Tabung">
+                <Button
+                  className="icon-only surface-standard"
+                  size="medium"
+                  color="grey"
+                  variant="surface"
+                  startIcon={<NiPlus size={"medium"} />}
+                  onClick={() => navigate('/tambah-tabung')}
+                />
+              </Tooltip>
+            )}
+          </Grid>
+        </Grid>
+
+        {errorMessage && (
+          <Grid size={12}>
+            <Collapse in={true}>
+              <Alert color="error" icon={<NiCrossSquare />} >
+                {errorMessage}
+              </Alert>
+            </Collapse>
+          </Grid>
+        )}
+
+        <Grid size={12}>
+          <Card>
+            <CardContent>
+              <Grid container spacing={5} className="w-full" size={12}>
+                <Grid size={{xs: 1, md: 2, lg:3}}>
+                  <FormControl className="outlined mb-0" variant="standard" size="small" fullWidth>
+                    <FormLabel component="label">Cari</FormLabel>
+                      <Input
+                        placeholder="Nomor atau barcode"
+                        value={filter?.search ?? ""}
+                        onChange={e => setFilter(prev => ({ ...prev,  search: e.target.value}))}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Isi</FormLabel>
+                    <Select
+                      value={filter?.content}
+                      onChange={(e: any) => setFilter(prev => ({...prev, content: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="">Semua</MenuItem>
+                      {contentTypeFilter.map((item: any, idx: any) => (
+                        <MenuItem key={idx} value={item?.id}>{item?.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Jenis</FormLabel>
+                    <Select
+                      value={filter?.type}
+                      onChange={(e: any) => setFilter(prev => ({...prev, type: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="">Semua</MenuItem>
+                      <MenuItem value="industry">Industri</MenuItem>
+                      <MenuItem value="medical">Medis</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Tabung DM</FormLabel>
+                    <Select
+                      value={filter?.own}
+                      onChange={(e: any) => setFilter(prev => ({...prev, own: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value={undefined}>Semua</MenuItem>
+                      <MenuItem value={1}>Tabung DM</MenuItem>
+                      <MenuItem value={0}>Bukan Tabung DM</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Aktif</FormLabel>
+                    <Select
+                      value={filter?.active}
+                      onChange={(e: any) => setFilter(prev => ({...prev, active: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value={undefined}>Semua</MenuItem>
+                      <MenuItem value={1}>Aktif</MenuItem>
+                      <MenuItem value={0}>Tidak Aktif</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }} className="flex items-end">
+                  <Button
+                    size="small"
+                    startIcon={<NiSearch />}
+                    loading={isLoading}
+                    loadingPosition="start"
+                    variant="pastel"
+                    color="primary"
+                    onClick={() => getRows()}
+                  >Cari</Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
       <Grid size={12}>
         <DataGrid
           apiRef={apiRef}
           loading={isLoading}
           rows={rows}
           columns={columns}
+          hideFooter
           initialState={{
             columns: { columnVisibilityModel: { id: false } },
           }}
@@ -629,10 +663,6 @@ export default function Page() {
           columnHeaderHeight={32}
           disableRowSelectionOnClick
           className="full-page border-none"
-          pagination
-          paginationModel={paginationModel}
-          onPaginationModelChange={(newModel) => setPaginationModel(newModel)}
-          pageSizeOptions={[5,10,25,50,100]}
           slotProps={{
             panel: {
               className: "mt-1!",
@@ -687,14 +717,14 @@ export default function Page() {
             moreActionsIcon: () => {
               return <NiEllipsisVertical size={"medium"} />;
             },
-            toolbar: CustomToolbar,
+            // toolbar: CustomToolbar,
           }}
           rowSelectionModel={rowSelectionModel}
           onRowSelectionModelChange={(rowSelectionModel: GridRowSelectionModel) => {
             setRowSelectionModel(rowSelectionModel);
           }}
-          hideFooterSelectedRowCount
-          showToolbar
+          // hideFooterSelectedRowCount
+          showToolbar={false}
         />
       </Grid>
     </Grid>
