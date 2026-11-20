@@ -7,8 +7,10 @@ import {
   Collapse,
   FilledInput,
   FormControl,
+  FormLabel,
   Grid,
   IconButton,
+  Input,
   InputAdornment,
   InputLabel,
   Select,
@@ -170,10 +172,17 @@ export default function Page() {
   const [openBarcodeHistory, setOpenBarcodeHistory] = useState<boolean>(false)
   const [activeBarcodeHistoryData, setActiveBarcodeHistoryData] = useState<BarcodeHistoryData>()
   const [isNeedReloadData, setIsNeedReloadData] = useState<boolean>(false)
+  const [filter, setFilter] = useState<{ search:  string, paginate: number, content: string, type: string, active: boolean | undefined,  }>({
+    search: "",
+    paginate: 10,
+    content: "",
+    type: "",
+    active: undefined
+  })
 
   const getRows = () => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.TUBE_INDEX)
+    axios.post(ApiEndpoint.TUBE_INDEX, filter)
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
@@ -374,41 +383,41 @@ export default function Page() {
     //   width: 150,
     //   editable: false,
     // },
-    {
-      field: "status",
-      headerName: "Kondisi",
-      width: 100,
-      editable: false,
-      type: "singleSelect",
-      valueOptions: [
-        { value: "filled", label: 'Isi' },
-        { value: "empty", label: 'Kosong' },
-        { value: "broken", label: 'Rusak' },
-        { value: "expired", label: 'Afkir' },
-        { value: "display", label: 'Pajangan' },
-        { value: "unknown", label: 'Tidak diketahui' },
-      ],
-      renderCell: (params: GridRenderCellParams<any, string>) => {
-        const value = params.value;
-        switch (value) {
-          case "filled":
-            return "Isi"
-          case "empty":
-            return "Kosong"
-          case "broken":
-            return "Rusak"
-          case "expired":
-            return "Afkir"
-          case "display":
-            return "Pajangan"
-          case "unknown":
-            return "Tidak diketahui"
-          default:
-            return ""
-        }
-      },
-      flex: 1,
-    },
+    // {
+    //   field: "status",
+    //   headerName: "Kondisi",
+    //   width: 100,
+    //   editable: false,
+    //   type: "singleSelect",
+    //   valueOptions: [
+    //     { value: "filled", label: 'Isi' },
+    //     { value: "empty", label: 'Kosong' },
+    //     { value: "broken", label: 'Rusak' },
+    //     { value: "expired", label: 'Afkir' },
+    //     { value: "display", label: 'Pajangan' },
+    //     { value: "unknown", label: 'Tidak diketahui' },
+    //   ],
+    //   renderCell: (params: GridRenderCellParams<any, string>) => {
+    //     const value = params.value;
+    //     switch (value) {
+    //       case "filled":
+    //         return "Isi"
+    //       case "empty":
+    //         return "Kosong"
+    //       case "broken":
+    //         return "Rusak"
+    //       case "expired":
+    //         return "Afkir"
+    //       case "display":
+    //         return "Pajangan"
+    //       case "unknown":
+    //         return "Tidak diketahui"
+    //       default:
+    //         return ""
+    //     }
+    //   },
+    //   flex: 1,
+    // },
     {
       field: "active",
       headerName: "Aktif",
@@ -555,7 +564,7 @@ export default function Page() {
           )}
 
           <Grid container spacing={5} className="w-full" size={12}>
-            <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
+            {/* <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
               <InputLabel>Cari</InputLabel>
               <QuickFilter
                 render={() => (
@@ -583,7 +592,18 @@ export default function Page() {
                   />
                 )}
               />
-            </FormControl>
+            </FormControl> */}
+            <Grid columns={{xs: 1, md: 2, lg:3}}>
+              <FormControl className="outlined" variant="standard" size="small" fullWidth>
+                <FormLabel component="label">Cari</FormLabel>
+                  <Input
+                    placeholder=""
+                    value={filter?.search ?? ""}
+                    onChange={e => setFilter(prev => ({ ...prev,  search: e.target.value}))}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+            </Grid>
           </Grid>
         </Grid>
       </Toolbar>
