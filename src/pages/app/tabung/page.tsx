@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 import {
   Alert,
@@ -13,6 +13,8 @@ import {
   Input,
   InputLabel,
   MenuItem,
+  Pagination,
+  PaginationItem,
   Select,
   SelectProps,
   Tooltip,
@@ -25,7 +27,6 @@ import {
   GridRenderCellParams,
   GridRowSelectionModel,
   GridRowSpacingParams,
-  Toolbar,
   useGridApiRef,
 } from "@mui/x-data-grid";
 
@@ -47,7 +48,6 @@ import NiFilterPlus from "@/icons/nexture/ni-filter-plus";
 import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
-
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
 import NiBarcode from "@/icons/nexture/ni-barcode";
@@ -59,8 +59,9 @@ import NiCheckFull from "@/icons/nexture/ni-check-full";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailTube from "./detail";
 import { useUserContext } from "@/hooks/use-user";
-import * as XLSX from 'xlsx';
 import BarcodeHistory from "./barcode-history";
+import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
+import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 
 interface Row {
   id: string,
@@ -125,15 +126,30 @@ interface BarcodeHistoryData {
   }[]
 };
 
-interface DataExport {
-  Nomor: string
-  Barcode: string
-  Isi: string
-  Jenis: string
-  Pemilik: string
-  Posisi: string
-  Kondisi: string
-  Aktif: string
+interface FilterDataType {
+  search:  string
+  paginate: number
+  content: string
+  type: string
+  own: number | undefined
+  active: number | undefined
+  page: number
+}
+
+interface MetaDataType {
+  current_page: number
+  from: number
+  last_page: number
+  links: {
+    url: string
+    label: string
+    page: number
+    active: boolean
+  }[]
+  path: string
+  per_page: number
+  to: number
+  total: 4879
 }
 
 export default function Page() {
@@ -162,22 +178,27 @@ export default function Page() {
   const [openBarcodeHistory, setOpenBarcodeHistory] = useState<boolean>(false)
   const [activeBarcodeHistoryData, setActiveBarcodeHistoryData] = useState<BarcodeHistoryData>()
   const [isNeedReloadData, setIsNeedReloadData] = useState<boolean>(false)
-  const [filter, setFilter] = useState<{ search:  string, paginate: number, content: string, type: string, own: number | undefined, active: number | undefined,  }>({
+  const [filter, setFilter] = useState<FilterDataType>({
     search: "",
     paginate: 10,
     content: "",
     type: "",
     own: undefined,
-    active: undefined
+    active: undefined,
+    page: 1
   })
   const [contentTypeFilter, setContentTypeFilter] = useState([])
+  const [meta, setMeta] = useState<MetaDataType>()
+  const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
 
-  const getRows = () => {
+  const getRows = (page?: number, paginate?: number) => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.TUBE_INDEX, filter)
+    axios.post(ApiEndpoint.TUBE_INDEX, { ...filter, page: page ?? filter.page, paginate: paginate ?? filter.paginate })
     .then((res) => {
       let result: Row[] = res.data?.data
+      let meta: MetaDataType = res.data?.meta
       setRows(result)
+      setMeta(meta)
     })
     .finally(() => {
       setIsLoading(false)
@@ -262,22 +283,38 @@ export default function Page() {
   }
 
   const exportExcel = () => {
-    // const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
-    // const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
-    // const dataExport: DataExport[] = filteredRows.map((row) => ({
-    //   Nomor: row.number,
-    //   Barcode: row.barcode || "",
-    //   Isi: `${row.tube_content.code} - ${row.tube_content.name}`,
-    //   Jenis: row.type === "medical" ? "Medis" : row.type === "industry" ? "Industri" : "",
-    //   Pemilik: row.own ? "Tabung DM" : row.second_owner ? `Member (${row.second_owner.code} - ${row.second_owner.name})` : "",
-    //   Posisi: row.position === "site" ? "Cabang" : row.position === "supplier" ? "Supplier" : row.position === "member" ? "Member" : row.position === "transit" ? "Transit" : row.position === "unknown" ? "Tidak diketahui" : "",
-    //   Kondisi: row.status === "filled" ? "Isi" : row.status === "empty" ? "Kosong" : row.status === "broken" ? "Rusak" : row.status === "expired" ? "Afkir" : row.status === "display" ? "Pajangan" : row.status === "unknown" ? "Tidak diketahui" : "",
-    //   Aktif: row.active ? "Ya" : "Tidak",
-    // }));
-    // const worksheet = XLSX.utils.json_to_sheet(dataExport);
-    // const workbook = XLSX.utils.book_new();
-    // XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    // XLSX.writeFile(workbook, "data_tabung.xlsx");
+    setIsLoadingDownload(true)
+    axios.post(ApiEndpoint.TUBE_EXPORT, filter, { responseType: 'blob' })
+    .then((res) => {
+      const url = window.URL.createObjectURL(
+        new Blob([res.data])
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+          'download',
+          `data-tabung-${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    })
+    .finally(() => {
+      setIsLoadingDownload(false)
+    })
+  }
+
+  const onChangePage = (_event: ChangeEvent<unknown>, value: number) => {
+    setFilter(prev => ({ ...prev, page: value }))
+    getRows(value)
+  }
+
+  const onChangePageSize = (value: number) => {
+    setFilter(prev => ({ ...prev, paginate: value }))
+    getRows(filter.page, value)
+    console.log(value);
+    
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
@@ -524,6 +561,9 @@ export default function Page() {
                 variant="surface"
                 startIcon={<NiArrowInDown size={"medium"} />}
                 onClick={exportExcel}
+                loading={isLoadingDownload}
+                disabled={isLoadingDownload}
+
               />
             </Tooltip>
 
@@ -725,6 +765,32 @@ export default function Page() {
           }}
           // hideFooterSelectedRowCount
           showToolbar={false}
+        />
+      </Grid>
+      <Grid size={12} component="div" className="flex justify-end">
+        <FormControl size="small" variant="standard" className="outlined mb-0 w-18">
+          <Select
+            value={filter?.paginate}
+            onChange={(e: any) => onChangePageSize(e.target.value)}
+            IconComponent={NiChevronDownSmall}
+            MenuProps={{ className: "outlined" }}
+            disabled={isLoading}
+          >
+            <MenuItem value={10}>10</MenuItem>
+            <MenuItem value={25}>25</MenuItem>
+            <MenuItem value={50}>50</MenuItem>
+            <MenuItem value={100}>100</MenuItem>
+          </Select>
+        </FormControl>
+        <Pagination
+          size="small"
+          count={meta?.last_page ?? 0}
+          page={filter.page}
+          onChange={onChangePage}
+          renderItem={(item) => (
+            <PaginationItem slots={{ previous: NiChevronLeftSmall, next: NiChevronRightSmall }} {...item} />
+          )}
+          color="primary"
         />
       </Grid>
     </Grid>

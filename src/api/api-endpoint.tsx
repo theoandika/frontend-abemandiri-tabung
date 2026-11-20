@@ -24,6 +24,7 @@ const ApiEndpoint = {
   // tube
   TUBE_INDEX: "tubes/index",
   CREATE_TUBE: "tubes",
+  TUBE_EXPORT: "tubes/export",
   BARCODE_LIST: "tubes/barcode-list",
   NUMBER_LIST: "tubes/number-list",
 
