@@ -313,8 +313,6 @@ export default function Page() {
   const onChangePageSize = (value: number) => {
     setFilter(prev => ({ ...prev, paginate: value }))
     getRows(filter.page, value)
-    console.log(value);
-    
   }
 
   const columns: GridColDef<(typeof rows)[number]>[] = [
