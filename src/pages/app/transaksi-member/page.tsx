@@ -1,17 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 import {
   Alert,
+  Autocomplete,
   Button,
+  Card,
+  CardContent,
   Collapse,
   FilledInput,
   FormControl,
+  FormLabel,
   Grid,
   IconButton,
+  Input,
   InputAdornment,
   InputLabel,
+  MenuItem,
+  Pagination,
+  PaginationItem,
   Select,
   SelectProps,
+  TextField,
   Tooltip,
   Typography
 } from "@mui/material";
@@ -48,7 +57,7 @@ import NiSearch from "@/icons/nexture/ni-search";
 import { cn } from "@/lib/utils";
 import ApiEndpoint from "@/api/api-endpoint"
 import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import 'dayjs/locale/id'
 import axios from "@/api/axios";
 import DeleteConfirmation from "@/components/dialog/delete-confirmation";
@@ -56,6 +65,11 @@ import NiEyeOpen from "@/icons/nexture/ni-eye-open";
 import DetailMemberTransaction from "./detail";
 import { useUserContext } from "@/hooks/use-user";
 import * as XLSX from 'xlsx';
+import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
+import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
+import { DatePicker, DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import NiCalendar from "@/icons/nexture/ni-calendar";
 
 interface Row {
   id: string
@@ -85,6 +99,17 @@ interface Row {
   }[],
 };
 
+interface FilterDataType {
+  search:  string
+  paginate: number
+  date: Dayjs | null
+  site: string
+  member: string
+  in_or_out: string
+  condition: string
+  page: number
+}
+
 interface DataExport {
   Tanggal: string
   Cabang: string
@@ -92,6 +117,22 @@ interface DataExport {
   "Masuk/Keluar": string
   Kondisi: string
   Tabung: number
+}
+
+interface MetaDataType {
+  current_page: number
+  from: number
+  last_page: number
+  links: {
+    url: string
+    label: string
+    page: number
+    active: boolean
+  }[]
+  path: string
+  per_page: number
+  to: number
+  total: 4879
 }
 
 export default function Page() {
@@ -121,13 +162,49 @@ export default function Page() {
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [openDetail, setOpenDetail] = useState<boolean>(false)
   const [activeData, setActiveData] = useState<Row | null>(null)
+  const [filter, setFilter] = useState<FilterDataType>({
+    search: "",
+    paginate: 10,
+    date: null,
+    site: "",
+    member: "",
+    in_or_out: "",
+    condition: "",
+    page: 1
+  })
+  const [siteFilter, setSiteFilter] = useState([])
+  const [memberFilter, setMemberFilter] = useState([])
+  const [meta, setMeta] = useState<MetaDataType>()
+  const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
 
-  const getRows = () => {
+  const getRows = (page?: number, paginate?: number) => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX)
+    axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX, { ...filter, date: filter.date?.format("YYYY-MM-DD") })
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
+  }
+
+  const getSiteFilter = () => {
+    setIsLoading(true)
+    axios.get(ApiEndpoint.SITE_ALL)
+    .then((res) => {
+      setSiteFilter(res.data?.data)
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
+  }
+
+  const getMemberFilter = () => {
+    setIsLoading(true)
+    axios.get(ApiEndpoint.MEMBER_ALL)
+    .then((res) => {
+      setMemberFilter(res.data?.data?.map((item: any) => ({ value: item?.id, label: `${item?.code} - ${item?.name}`})))
     })
     .finally(() => {
       setIsLoading(false)
@@ -139,6 +216,8 @@ export default function Page() {
       navigate('/404')
     } else {
       getRows()
+      getSiteFilter()
+      getMemberFilter()
     }
   }, [])
 
@@ -215,13 +294,25 @@ export default function Page() {
     XLSX.writeFile(wb, "data_transaksi_member.xlsx");
   }
 
+  const onChangePage = (_event: ChangeEvent<unknown>, value: number) => {
+    setFilter(prev => ({ ...prev, page: value }))
+    getRows(value)
+  }
+
+  const onChangePageSize = (value: number) => {
+    setFilter(prev => ({ ...prev, paginate: value }))
+    getRows(filter.page, value)
+  }
+
   const columns: GridColDef<(typeof rows)[number]>[] = [
     { field: "id", headerName: "ID", width: 90, filterable: false },
     {
       field: "date",
       headerName: "Tanggal",
-      width: 180,
+      width: 200,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "dateTime",
       valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
     },
@@ -230,6 +321,8 @@ export default function Page() {
       headerName: "Cabang",
       width: 200,
       editable: false,
+      filterable: false,
+      sortable: false,
       valueGetter: (_, row) => row.site.name,
     },
     {
@@ -237,6 +330,9 @@ export default function Page() {
       headerName: "Member",
       width: 200,
       editable: false,
+      filterable: false,
+      sortable: false,
+      flex: 1,
       valueGetter: (_, row) => row.member ? `${row.member?.code} - ${row.member?.name}` : '',
     },
     {
@@ -244,6 +340,8 @@ export default function Page() {
       headerName: "Masuk/Keluar",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "in", label: 'Masuk' },
@@ -271,6 +369,8 @@ export default function Page() {
       headerName: "Kondisi",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "filled", label: 'Isi' },
@@ -300,6 +400,8 @@ export default function Page() {
       field: "items",
       headerName: "Tabung",
       editable: false,
+      filterable: false,
+      sortable: false,
       width: 80,
       type: "number",
       valueGetter: (_, row) => row.items.length,
@@ -309,7 +411,6 @@ export default function Page() {
       headerName: "Aksi",
       type: "actions",
       minWidth: 80,
-      flex: 1,
       align: "right",
       headerAlign: "right",
       getActions: (params) => [
@@ -436,6 +537,195 @@ export default function Page() {
   return (
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
+      <Grid container spacing={5} className="w-full">
+        <Grid container spacing={2.5} className="w-full" size={12}>
+          <Grid size={{ xs: 12, md: "grow" }}>
+            <Typography variant="h1" component="h1" className="mb-0">
+              Transaksi Member
+            </Typography>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
+            <Tooltip title="Download Excel">
+              <Button
+                className="icon-only surface-standard flex-none"
+                size="medium"
+                color="grey"
+                variant="surface"
+                startIcon={<NiArrowInDown size={"medium"} />}
+                onClick={exportExcel}
+              />
+            </Tooltip>
+
+            {checkPermission([], ['create-transaction']) && (
+              <Tooltip title="Transaksi Baru">
+                <Button
+                  className="icon-only surface-standard"
+                  size="medium"
+                  color="grey"
+                  variant="surface"
+                  startIcon={<NiPlus size={"medium"} />}
+                  onClick={() => navigate('/transaksi-baru')}
+                />
+              </Tooltip>
+            )}
+          </Grid>
+        </Grid>
+
+        {errorMessage && (
+          <Grid size={12}>
+            <Collapse in={true}>
+              <Alert color="error" icon={<NiCrossSquare />} >
+                {errorMessage}
+              </Alert>
+            </Collapse>
+          </Grid>
+        )}
+
+        <Grid size={12}>
+          <Card>
+            <CardContent>
+              <Grid container spacing={5} className="w-full" size={12}>
+                <Grid size={{xs: 1, md: 2, lg:3}}>
+                  <FormControl className="outlined mb-0" variant="standard" size="small" fullWidth>
+                    <FormLabel component="label">Cari</FormLabel>
+                      <Input
+                        placeholder="Cabang atau member"
+                        value={filter?.search ?? ""}
+                        onChange={e => setFilter(prev => ({ ...prev,  search: e.target.value}))}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl variant="standard" fullWidth className="outlined">
+                    <FormLabel component="label">Tanggal</FormLabel>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        disabled={isLoading}
+                        value={filter.date}
+                        format="YYYY-MM-DD"
+                        className="mb-0"
+                        onChange={(value) => value !== null && setFilter(prev => ({...prev, date: value}))}
+                        slots={{
+                          openPickerIcon: (props) => {
+                            return <NiCalendar {...props} className={cn(props.className, "text-text-secondary")} />;
+                          },
+                          switchViewIcon: (props) => {
+                            return <NiChevronDownSmall {...props} className={cn(props.className, "text-text-secondary")} />;
+                          },
+                          leftArrowIcon: (props) => {
+                            return <NiChevronLeftSmall {...props} className={cn(props.className, "text-text-secondary")} />;
+                          },
+                          rightArrowIcon: (props) => {
+                            return <NiChevronRightSmall {...props} className={cn(props.className, "text-text-secondary")} />;
+                          },
+                          clearIcon: (props) => {
+                            return <NiCross {...props} className={cn(props.className, "text-text-secondary")} />;
+                          },
+                        }}
+                        slotProps={{
+                          textField: { size: "small", variant: "standard" },
+                          desktopPaper: { className: "outlined" },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Cabang</FormLabel>
+                    <Select
+                      value={filter?.site}
+                      onChange={(e: any) => setFilter(prev => ({...prev, site: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="">Semua</MenuItem>
+                      {siteFilter.map((item: any, idx: any) => (
+                        <MenuItem key={idx} value={item?.id}>{item?.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth>
+                    <FormLabel component="label">Member</FormLabel>
+                    <Autocomplete
+                      size="small"
+                      popupIcon={<NiChevronDownSmall />}
+                      clearIcon={<NiCross />}
+                      value={memberFilter.filter((item: any) => item?.value === filter.member)[0]}
+                      options={memberFilter}
+                      getOptionKey={(option: any) => option.value}
+                      getOptionLabel={(option: any) => option.label}
+                      onChange={(_, val: any) => setFilter(prev => ({ ...prev, member: val?.key }))}
+                      renderInput={(params) => (
+                        <TextField {...params} variant="standard" className="outlined" placeholder="" />
+                      )}
+                      slotProps={{
+                        popper: { className: "outlined" },
+                        chip: {
+                          variant: "filled",
+                          size: "small",
+                        },
+                      }}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Masuk/Keluar</FormLabel>
+                    <Select
+                      value={filter.in_or_out}
+                      onChange={(e: any) => setFilter(prev => ({...prev, in_or_out: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="">Semua</MenuItem>
+                      <MenuItem value="in">Masuk</MenuItem>
+                      <MenuItem value="out">Keluar</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }}>
+                  <FormControl fullWidth size="small" variant="standard" className="outlined mb-0">
+                    <FormLabel component="label">Kondisi</FormLabel>
+                    <Select
+                      value={filter?.condition}
+                      onChange={(e: any) => setFilter(prev => ({...prev, condition: e.target.value}))}
+                      IconComponent={NiChevronDownSmall}
+                      MenuProps={{ className: "outlined" }}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="">Semua</MenuItem>
+                      <MenuItem value="filled">Isi</MenuItem>
+                      <MenuItem value="empty">Kosong</MenuItem>
+                      <MenuItem value="broken">Rusak</MenuItem>
+                      <MenuItem value="expired">Afkir</MenuItem>
+                      <MenuItem value="display">Pajangan</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 1, md: 2, lg:3 }} className="flex items-end">
+                  <Button
+                    size="small"
+                    startIcon={<NiSearch />}
+                    loading={isLoading}
+                    loadingPosition="start"
+                    variant="pastel"
+                    color="primary"
+                    onClick={() => getRows()}
+                  >Cari</Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
       <Grid size={12}>
         <DataGrid
           apiRef={apiRef}
@@ -514,8 +804,34 @@ export default function Page() {
           onRowSelectionModelChange={(rowSelectionModel: GridRowSelectionModel) => {
             setRowSelectionModel(rowSelectionModel);
           }}
-          hideFooterSelectedRowCount
-          showToolbar
+          showToolbar={false}
+          hideFooter
+        />
+      </Grid>
+      <Grid size={12} component="div" className="flex justify-end">
+        <FormControl size="small" variant="standard" className="outlined mb-0 w-18">
+          <Select
+            value={filter?.paginate}
+            onChange={(e: any) => onChangePageSize(e.target.value)}
+            IconComponent={NiChevronDownSmall}
+            MenuProps={{ className: "outlined" }}
+            disabled={isLoading}
+          >
+            <MenuItem value={10}>10</MenuItem>
+            <MenuItem value={25}>25</MenuItem>
+            <MenuItem value={50}>50</MenuItem>
+            <MenuItem value={100}>100</MenuItem>
+          </Select>
+        </FormControl>
+        <Pagination
+          size="small"
+          count={meta?.last_page ?? 0}
+          page={filter.page}
+          onChange={onChangePage}
+          renderItem={(item) => (
+            <PaginationItem slots={{ previous: NiChevronLeftSmall, next: NiChevronRightSmall }} {...item} />
+          )}
+          color="primary"
         />
       </Grid>
     </Grid>
