@@ -194,7 +194,7 @@ export default function Page() {
     {
       field: "date",
       headerName: "Tanggal",
-      width: 180,
+      width: 200,
       editable: false,
       type: "dateTime",
       valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
@@ -211,6 +211,7 @@ export default function Page() {
       headerName: "Member",
       width: 200,
       editable: false,
+      flex: 1,
       valueGetter: (_, row) => row.member?.label,
     },
     {
@@ -294,7 +295,6 @@ export default function Page() {
       headerName: "Aksi",
       type: "actions",
       minWidth: 80,
-      flex: 1,
       align: "right",
       headerAlign: "right",
       getActions: (params) => [
