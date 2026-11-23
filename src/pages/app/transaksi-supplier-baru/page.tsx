@@ -106,7 +106,7 @@ export default function Page() {
     const data = new FormData();
     data.append('site', site);
     data.append('supplier', supplier?.value ?? "")
-    data.append('date', date.format("YYYY-MM-DD hh:mm"))
+    data.append('date', date.format("YYYY-MM-DD HH:mm"))
     data.append('transaction_type', transactionType)
     data.append('tube_status', tubeStatus)
     data.append('note', note)
@@ -193,6 +193,7 @@ export default function Page() {
                         disabled={isLoading}
                         value={date}
                         format="DD/MM/YYYY H:mm"
+                        ampm={false}
                         className="mb-0"
                         onChange={(value) => value !== null && setDate(value)}
                         slots={{

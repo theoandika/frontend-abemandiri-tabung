@@ -218,7 +218,7 @@ export default function UpdateDraft({ data, onBack }: Props) {
     const formData = new FormData();
     formData.append('site', site);
     formData.append('member', member?.value ?? "")
-    formData.append('date', date.format("YYYY-MM-DD hh:mm"))
+    formData.append('date', date.format("YYYY-MM-DD HH:mm"))
     formData.append('transaction_type', transactionType)
     formData.append('tube_status', tubeStatus)
     formData.append('note', note)
@@ -309,6 +309,7 @@ export default function UpdateDraft({ data, onBack }: Props) {
                         value={date}
                         format="DD/MM/YYYY H:mm"
                         className="mb-0"
+                        ampm={false}
                         onChange={(value) => value !== null && setDate(value)}
                         slots={{
                           openPickerIcon: (props) => {

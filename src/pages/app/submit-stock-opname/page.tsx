@@ -123,6 +123,7 @@ export default function DetailMemberTransaction() {
                       disabled={isLoading}
                       value={date}
                       format="DD/MM/YYYY H:m"
+                      ampm={false}
                       className="mb-0"
                       onChange={(value) => value !== null && setDate(value)}
                       slots={{

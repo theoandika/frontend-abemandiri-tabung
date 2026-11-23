@@ -192,7 +192,7 @@ export default function Page() {
     const data = new FormData();
     data.append('site', site);
     data.append('member', member?.value ?? "")
-    data.append('date', date.format("YYYY-MM-DD hh:mm"))
+    data.append('date', date.format("YYYY-MM-DD HH:mm"))
     data.append('transaction_type', transactionType)
     data.append('tube_status', tubeStatus)
     data.append('note', note)
@@ -270,6 +270,7 @@ export default function Page() {
                       <DateTimePicker
                         disabled={isLoading}
                         value={date}
+                        ampm={false}
                         format="DD/MM/YYYY H:mm"
                         className="mb-0"
                         onChange={(value) => value !== null && setDate(value)}
