@@ -7,13 +7,10 @@ import {
   Card,
   CardContent,
   Collapse,
-  FilledInput,
   FormControl,
   FormLabel,
   Grid,
-  IconButton,
   Input,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Pagination,
@@ -25,17 +22,11 @@ import {
   Typography
 } from "@mui/material";
 import {
-  ColumnsPanelTrigger,
   DataGrid,
   GridActionsCellItem,
   GridColDef,
-  gridFilteredSortedRowEntriesSelector,
   GridRowSelectionModel,
   GridRowSpacingParams,
-  QuickFilter,
-  QuickFilterClear,
-  QuickFilterControl,
-  Toolbar,
   useGridApiRef
 } from "@mui/x-data-grid";
 
@@ -67,7 +58,7 @@ import { useUserContext } from "@/hooks/use-user";
 import * as XLSX from 'xlsx';
 import NiChevronLeftSmall from "@/icons/nexture/ni-chevron-left-small";
 import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
-import { DatePicker, DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import NiCalendar from "@/icons/nexture/ni-calendar";
 
@@ -104,19 +95,20 @@ interface FilterDataType {
   paginate: number
   date: Dayjs | null
   site: string
-  member: string
   in_or_out: string
   condition: string
   page: number
 }
 
 interface DataExport {
-  Tanggal: string
-  Cabang: string
-  Member: string
-  "Masuk/Keluar": string
-  Kondisi: string
-  Tabung: number
+  id: string
+  date: string
+  transaction_type: string
+  tube_status: string
+  site_name: string
+  member_code: string
+  member_name: string
+  transaction_items_count: number
 }
 
 interface MetaDataType {
@@ -139,10 +131,6 @@ export default function Page() {
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
     type: "include",
     ids: new Set(),
-  });
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
   });
 
   const getRowSpacing = useCallback((params: GridRowSpacingParams) => {
@@ -167,22 +155,29 @@ export default function Page() {
     paginate: 10,
     date: null,
     site: "",
-    member: "",
     in_or_out: "",
     condition: "",
     page: 1
   })
   const [siteFilter, setSiteFilter] = useState([])
   const [memberFilter, setMemberFilter] = useState([])
+  const [memberFilterValue, setMemberFilterValue] = useState<{value: string, label: string} | null>(null)
   const [meta, setMeta] = useState<MetaDataType>()
   const [isLoadingDownload, setIsLoadingDownload] = useState<boolean>(false)
 
   const getRows = (page?: number, paginate?: number) => {
     setIsLoading(true)
-    axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX, { ...filter, date: filter.date?.format("YYYY-MM-DD") })
+    axios.post(ApiEndpoint.TRANSACTION_MEMBER_INDEX, {
+      ...filter,
+      date: filter.date?.format("YYYY-MM-DD"),
+      member: memberFilterValue?.value,
+      page: page ?? filter.page,
+      paginate: paginate ?? filter?.paginate
+    })
     .then((res) => {
       let result: Row[] = res.data?.data
       setRows(result)
+      setMeta(res?.data?.meta)
     })
     .finally(() => {
       setIsLoading(false)
@@ -250,48 +245,62 @@ export default function Page() {
   }
 
   const exportExcel = () => {
-    const filteredSortedRowEntries = gridFilteredSortedRowEntriesSelector(apiRef);
-    const filteredRows = filteredSortedRowEntries.map(entry => entry.model);
-    const dataExport: DataExport[] = filteredRows.map(row => ({
-      Tanggal: dayjs(row.date).locale('id').format("DD MMMM YYYY HH:mm"),
-      Cabang: row.site.name,
-      Member: row.member ? `${row.member.code} - ${row.member.name}` : '',
-      "Masuk/Keluar": (() => {
-        switch (row.transaction_type) {
-          case "in":
-            return "Masuk";
-          case "out":
-            return "Keluar";
-          case "return":
-            return "Retur";
-          case "sell":
-            return "Jual";
-          default:
-            return "";
-        }
-      })(),
-      Kondisi: (() => {
-        switch (row.tube_status) {
-          case "filled":
-            return "Isi";
-          case "empty":
-            return "Kosong";
-          case "broken":
-            return "Rusak";
-          case "expired":
-            return "Afkir";
-          case "display":
-            return "Pajangan";
-          default:
-            return "";
-        }
-      })(),
-      Tabung: row.items.length,
-    }));
-    const ws = XLSX.utils.json_to_sheet(dataExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Data Transaksi Member");
-    XLSX.writeFile(wb, "data_transaksi_member.xlsx");
+    setIsLoadingDownload(true)
+    axios.post(ApiEndpoint.MEMBER_TRANSACTION_EXPORT, {
+      ...filter,
+      date: filter.date?.format("YYYY-MM-DD"),
+      member: memberFilterValue?.value,
+      page: filter.page,
+      paginate: filter?.paginate
+    })
+    .then ((res) => {
+      const data: DataExport[] = res?.data?.data
+      const dataExport = data.map(row => ({
+        Tanggal: dayjs(row.date).locale('id').format("YYYY-MM-DD HH:mm"),
+        Cabang: row.site_name,
+        Member: `${row.member_code} - ${row.member_name}`,
+        "Masuk/Keluar": (() => {
+          switch (row.transaction_type) {
+            case "in":
+              return "Masuk";
+            case "out":
+              return "Keluar";
+            case "return":
+              return "Retur";
+            case "sell":
+              return "Jual";
+            default:
+              return "";
+          }
+        })(),
+        Kondisi: (() => {
+          switch (row.tube_status) {
+            case "filled":
+              return "Isi";
+            case "empty":
+              return "Kosong";
+            case "broken":
+              return "Rusak";
+            case "expired":
+              return "Afkir";
+            case "display":
+              return "Pajangan";
+            default:
+              return "";
+          }
+        })(),
+        Tabung: row.transaction_items_count,
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Data Transaksi Member");
+      XLSX.writeFile(wb, "data_transaksi_member.xlsx");
+    })
+    .catch(err => {
+      let errData = err?.response?.data
+      setErrorMessage(errData?.message)
+    })
+    .finally(() => setIsLoadingDownload(false))
   }
 
   const onChangePage = (_event: ChangeEvent<unknown>, value: number) => {
@@ -434,106 +443,6 @@ export default function Page() {
 
   if (openDetail && activeData) return <DetailMemberTransaction data={activeData} onBack={doBack} />
 
-  function CustomToolbar() {
-    return (
-      <Toolbar className="min-h-auto border-none">
-        <Grid container spacing={5} className="mb-4 w-full">
-          <Grid container spacing={2.5} className="w-full" size={12}>
-            <Grid size={{ xs: 12, md: "grow" }}>
-              <Typography variant="h1" component="h1" className="mb-0">
-                Transaksi Member
-              </Typography>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-              <Tooltip title="Columns">
-                <ColumnsPanelTrigger
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      className="icon-only surface-standard flex-none"
-                      size="medium"
-                      color="grey"
-                      variant="surface"
-                    >
-                      <NiCols size={"medium"} />
-                    </Button>
-                  )}
-                />
-              </Tooltip>
-
-              <Tooltip title="Download Excel">
-                <Button
-                  className="icon-only surface-standard flex-none"
-                  size="medium"
-                  color="grey"
-                  variant="surface"
-                  startIcon={<NiArrowInDown size={"medium"} />}
-                  onClick={exportExcel}
-                />
-              </Tooltip>
-
-              {checkPermission([], ['create-transaction']) && (
-                <Tooltip title="Transaksi Baru">
-                  <Button
-                    className="icon-only surface-standard"
-                    size="medium"
-                    color="grey"
-                    variant="surface"
-                    startIcon={<NiPlus size={"medium"} />}
-                    onClick={() => navigate('/transaksi-baru')}
-                  />
-                </Tooltip>
-              )}
-            </Grid>
-          </Grid>
-
-          {errorMessage && (
-            <Grid size={12}>
-              <Collapse in={true}>
-                <Alert color="error" icon={<NiCrossSquare />} >
-                  {errorMessage}
-                </Alert>
-              </Collapse>
-            </Grid>
-          )}
-
-          <Grid container spacing={5} className="w-full" size={12}>
-            <FormControl variant="filled" size="medium" className="surface mb-0 flex-1">
-              <InputLabel>Cari</InputLabel>
-              <QuickFilter
-                render={() => (
-                  <QuickFilterControl
-                    render={({ ref, ...controlProps }, state) => (
-                      <FilledInput
-                        {...controlProps}
-                        inputRef={ref}
-                        endAdornment={
-                          <>
-                            <InputAdornment position="end" className={cn(state.value === "" && "hidden")}>
-                              <QuickFilterClear edge="end">
-                                <NiCross size="medium" className="text-text-disabled" />
-                              </QuickFilterClear>
-                            </InputAdornment>
-                            <InputAdornment position="end" className={cn(state.value !== "" && "hidden")}>
-                              <IconButton edge="end">
-                                {<NiSearch size="medium" className="text-text-disabled" />}
-                              </IconButton>
-                            </InputAdornment>
-                          </>
-                        }
-                      />
-                    )}
-                  />
-                )}
-              />
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Toolbar>
-    );
-  }
-
   return (
     <Grid container spacing={5}>
       <DeleteConfirmation setOpen={setDeleteDialogOpen} open={deleteDialogOpen} onConfirm={deleteRow} />
@@ -554,6 +463,7 @@ export default function Page() {
                 variant="surface"
                 startIcon={<NiArrowInDown size={"medium"} />}
                 onClick={exportExcel}
+                loading={isLoadingDownload}
               />
             </Tooltip>
 
@@ -627,6 +537,7 @@ export default function Page() {
                         slotProps={{
                           textField: { size: "small", variant: "standard" },
                           desktopPaper: { className: "outlined" },
+                          field: { clearable: true, onClear: () => setFilter(prev => ({ ...prev, date: null })) }
                         }}
                       />
                     </LocalizationProvider>
@@ -656,11 +567,11 @@ export default function Page() {
                       size="small"
                       popupIcon={<NiChevronDownSmall />}
                       clearIcon={<NiCross />}
-                      value={memberFilter.filter((item: any) => item?.value === filter.member)[0]}
+                      value={memberFilterValue}
                       options={memberFilter}
                       getOptionKey={(option: any) => option.value}
                       getOptionLabel={(option: any) => option.label}
-                      onChange={(_, val: any) => setFilter(prev => ({ ...prev, member: val?.key }))}
+                      onChange={(_, val: any) => setMemberFilterValue(val)}
                       renderInput={(params) => (
                         <TextField {...params} variant="standard" className="outlined" placeholder="" />
                       )}
@@ -740,10 +651,6 @@ export default function Page() {
           columnHeaderHeight={32}
           disableRowSelectionOnClick
           className="full-page border-none"
-          pagination
-          paginationModel={paginationModel}
-          onPaginationModelChange={(newModel) => setPaginationModel(newModel)}
-          pageSizeOptions={[5,10,25,50,100]}
           slotProps={{
             panel: {
               className: "mt-1!",
@@ -798,7 +705,6 @@ export default function Page() {
             moreActionsIcon: () => {
               return <NiEllipsisVertical size={"medium"} />;
             },
-            toolbar: CustomToolbar,
           }}
           rowSelectionModel={rowSelectionModel}
           onRowSelectionModelChange={(rowSelectionModel: GridRowSelectionModel) => {

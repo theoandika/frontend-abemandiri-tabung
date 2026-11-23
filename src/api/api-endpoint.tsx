@@ -35,6 +35,7 @@ const ApiEndpoint = {
   // member transaction
   TRANSACTION_MEMBER_INDEX: "transactions/index",
   CREATE_MEMBER_TRANSACTION: "transactions",
+  MEMBER_TRANSACTION_EXPORT: "transactions/export",
 
   // tube barcodes
   TUBE_BARCODES_INDEX: "tube-barcodes/index",
