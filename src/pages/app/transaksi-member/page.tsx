@@ -124,7 +124,7 @@ interface MetaDataType {
   path: string
   per_page: number
   to: number
-  total: 4879
+  total: number
 }
 
 export default function Page() {
@@ -599,6 +599,8 @@ export default function Page() {
                       <MenuItem value="">Semua</MenuItem>
                       <MenuItem value="in">Masuk</MenuItem>
                       <MenuItem value="out">Keluar</MenuItem>
+                      <MenuItem value="return">Retur</MenuItem>
+                      <MenuItem value="sell">Jual</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
