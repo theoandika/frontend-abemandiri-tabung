@@ -45,6 +45,7 @@ const ApiEndpoint = {
   // supplier transaction
   SUPPLIER_TRANSACTION: "supplier-transactions",
   SUPPLIER_TRANSACTION_INDEX: "supplier-transactions/index",
+  SUPPLIER_TRANSACTION_EXPORT: "supplier-transactions/export",
 
   // report
   TUBE_ACTIVITY_REPORT: "reports/tube-activities",
