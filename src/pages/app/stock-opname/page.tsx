@@ -154,6 +154,7 @@ export default function Page() {
       headerName: "Cabang",
       width: 200,
       editable: false,
+      flex: 1,
       valueGetter: (_, row) => row.site.name,
     },
     {
@@ -161,12 +162,14 @@ export default function Page() {
       headerName: "Isi Tabung",
       width: 150,
       editable: false,
+      flex: 1,
       valueGetter: (_, row) => `${row.content.code} - ${row.content.name}`,
     },
     {
       field: "pic",
       headerName: "PIC Opname",
       width: 100,
+      flex: 1,
       editable: false,
     },
     {
@@ -204,7 +207,7 @@ export default function Page() {
     {
       field: "tube_count",
       headerName: "Jumlah Tabung",
-      width: 100,
+      width: 150,
       editable: false,
       type: "number",
     },
@@ -220,7 +223,6 @@ export default function Page() {
       headerName: "Aksi",
       type: "actions",
       minWidth: 80,
-      flex: 1,
       align: "right",
       headerAlign: "right",
       getActions: (params) => [
