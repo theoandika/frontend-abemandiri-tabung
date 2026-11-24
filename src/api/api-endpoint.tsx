@@ -49,6 +49,7 @@ const ApiEndpoint = {
 
   // report
   TUBE_ACTIVITY_REPORT: "reports/tube-activities",
+  EXPORT_TUBE_ACTIVITY: "reports/export-tube-activities",
   TUBE_STOCK_OPNAME_REPORT: "reports/tube-stock-opnames",
   LAST_TUBE_POSITION: "reports/last-tube-position",
 
