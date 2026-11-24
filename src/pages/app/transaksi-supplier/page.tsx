@@ -313,6 +313,8 @@ export default function Page() {
       headerName: "Tanggal",
       width: 200,
       editable: false,
+      sortable: false,
+      filterable: false,
       type: "dateTime",
       valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY H:mm")
     },
@@ -321,6 +323,8 @@ export default function Page() {
       headerName: "Cabang",
       width: 200,
       editable: false,
+      sortable: false,
+      filterable: false,
       valueGetter: (_, row) => row.site.name,
     },
     {
@@ -328,6 +332,8 @@ export default function Page() {
       headerName: "Supplier",
       width: 200,
       editable: false,
+      sortable: false,
+      filterable: false,
       flex: 1,
       valueGetter: (_, row) => row.supplier ? `${row.supplier.code} - ${row.supplier.name}` : '',
     },
@@ -336,6 +342,8 @@ export default function Page() {
       headerName: "Isi Ulang/Perbaikan",
       width: 200,
       editable: false,
+      sortable: false,
+      filterable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "refill", label: 'Isi Ulang' },
@@ -363,6 +371,8 @@ export default function Page() {
       headerName: "Kondisi",
       width: 100,
       editable: false,
+      sortable: false,
+      filterable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "filled", label: 'Isi' },
@@ -387,6 +397,8 @@ export default function Page() {
       headerName: "Tabung",
       width: 80,
       editable: false,
+      sortable: false,
+      filterable: false,
       type: "number",
       valueGetter: (_, row) => row.items.length,
     },
