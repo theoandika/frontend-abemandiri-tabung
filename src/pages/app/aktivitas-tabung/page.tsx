@@ -506,7 +506,7 @@ export default function Page() {
                   <FormControl className="outlined mb-0" variant="standard" size="small" fullWidth>
                     <FormLabel component="label">Cari</FormLabel>
                       <Input
-                        placeholder="Nomor atau barcode"
+                        placeholder="Nomor, barcode, nama lokasi"
                         value={filter?.search ?? ""}
                         onChange={e => setFilter(prev => ({ ...prev,  search: e.target.value}))}
                         disabled={isLoading}
