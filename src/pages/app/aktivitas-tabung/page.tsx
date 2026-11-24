@@ -270,9 +270,8 @@ export default function Page() {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
       XLSX.writeFile(workbook, "laporan_aktivitas_tabung.xlsx");
     })
-    .catch(err => {
-      let errData = err?.response?.data
-      setErrorMessage(errData?.message);
+    .catch(_err => {
+      setErrorMessage("Data terlalu besar, tidak dapat diunduh. Gunakan filter untuk mengurangi data");
     })
     .finally(() => {
       setIsLoadingDownload(false)
