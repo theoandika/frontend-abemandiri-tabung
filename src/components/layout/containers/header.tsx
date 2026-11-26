@@ -44,7 +44,7 @@ export default function Header() {
 
         <Box className="flex h-full flex-1 flex-row items-center gap-4 md:gap-6">
           {/* Logo */}
-          <Link to="/dashboards">
+          <Link to="/dashboard">
             <Logo className="max-w-32" />
           </Link>
         </Box>
