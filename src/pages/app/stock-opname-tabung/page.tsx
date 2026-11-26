@@ -291,6 +291,8 @@ export default function Page() {
       headerName: "Tanggal",
       width: 150,
       editable: false,
+      filterable: false,
+      sortable: false,
       flex: 1,
       type: "dateTime",
       valueFormatter: (value) => dayjs(value).locale('id').format("DD MMMM YYYY HH:mm")
@@ -299,6 +301,8 @@ export default function Page() {
       field: "site",
       headerName: "Cabang",
       width: 150,
+      filterable: false,
+      sortable: false,
       editable: false,
       flex: 1,
       valueGetter: (_, row) => row.site.name,
@@ -308,18 +312,24 @@ export default function Page() {
       headerName: "Nomor",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
     },
     {
       field: "barcode",
       headerName: "Barcode",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
     },
     {
       field: "tube_content",
       headerName: "Isi",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       flex: 1,
       valueGetter: (_, row) => `${row.tube_content.code} - ${row.tube_content.name}`
     },
@@ -328,6 +338,8 @@ export default function Page() {
       headerName: "Jenis",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "medical", label: 'Medis' },
@@ -349,6 +361,8 @@ export default function Page() {
       headerName: "Pemilik",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "Tabung DM", label: 'Tabung DM' },
@@ -360,6 +374,8 @@ export default function Page() {
       headerName: "Kondisi",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "filled", label: 'Isi' },
@@ -390,6 +406,8 @@ export default function Page() {
       headerName: "Lokasi",
       width: 100,
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "singleSelect",
       valueOptions: [
         { value: "site", label: 'Cabang' },
@@ -421,11 +439,15 @@ export default function Page() {
       width: 100,
       flex: 1,
       editable: false,
+      filterable: false,
+      sortable: false,
     },
     {
       field: "match",
       headerName: "Sesuai",
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "boolean",
       renderCell: (params: GridRenderCellParams<any, boolean>) => {
         const value = params.value;
@@ -436,6 +458,8 @@ export default function Page() {
       field: "adjust",
       headerName: "Disesuaikan",
       editable: false,
+      filterable: false,
+      sortable: false,
       type: "boolean",
       renderCell: (params: GridRenderCellParams<any, boolean>) => {
         const value = params.value;
